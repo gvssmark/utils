@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Stamp Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2EFE6;
+  --paper-card:#FBFAF5;
+  --paper-card-2:#F6F4EC;
+  --ink:#1E2A38;
+  --ink-soft:#5B6472;
+  --ink-faint:#8B93A0;
+  --line:#D9D3C1;
+  --line-strong:#C3BCA6;
+  --stamp:#B23A2E;
+  --stamp-soft:rgba(178,58,46,0.08);
+  --stamp-soft-2:rgba(178,58,46,0.16);
+  --teal:#2F6F62;
+  --teal-soft:rgba(47,111,98,0.10);
+  --amber:#9C6B15;
+  --amber-soft:rgba(156,107,21,0.12);
+  --shadow:0 1px 2px rgba(30,42,56,0.06), 0 6px 16px rgba(30,42,56,0.06);
+  --radius:3px;
+  --font-display:'Special Elite', 'Courier New', monospace;
+  --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  background-image:radial-gradient(rgba(30,42,56,0.035) 1px, transparent 1px);
+  background-size:22px 22px;
+  color:var(--ink);
+  font-family:var(--font-body);
+  line-height:1.45;
+  min-height:100vh;
+}
+::selection{background:var(--stamp-soft-2);}
+:focus-visible{outline:2px solid var(--stamp); outline-offset:2px;}
+button{font-family:inherit;}
+
+.app{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;padding-bottom:20px;border-bottom:1px dashed var(--line-strong);}
+.brand{display:flex;align-items:center;gap:16px;}
+.stamp-badge{
+  font-family:var(--font-display);font-size:13px;letter-spacing:1.5px;color:var(--stamp);
+  border:2px solid var(--stamp);border-radius:50%;width:74px;height:74px;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  transform:rotate(-8deg);position:relative;flex-shrink:0;line-height:1.15;
+}
+.stamp-badge::before{content:"";position:absolute;inset:5px;border:1px dashed var(--stamp);border-radius:50%;opacity:0.55;}
+.brand h1{font-family:var(--font-display);font-size:26px;margin:0 0 2px;letter-spacing:0.5px;font-weight:400;}
+.brand p{margin:0;color:var(--ink-soft);font-size:13.5px;}
+.privacy-note{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--teal);
+  background:var(--teal-soft);border:1px solid rgba(47,111,98,0.25);
+  padding:7px 12px;border-radius:var(--radius);white-space:nowrap;
+}
+
+.tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
+.tab-btn{
+  background:var(--paper-card-2);border:1px solid var(--line);border-bottom:3px solid transparent;
+  padding:11px 18px;cursor:pointer;font-size:14px;font-weight:600;color:var(--ink-soft);
+  border-radius:var(--radius) var(--radius) 0 0;display:flex;align-items:center;gap:9px;
+  transition:color .15s ease, border-color .15s ease, background .15s ease;
+}
+.tab-btn .num{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);border:1px solid var(--line-strong);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.tab-btn.active{color:var(--ink);background:var(--paper-card);border-color:var(--line);border-bottom-color:var(--stamp);}
+.tab-btn.active .num{border-color:var(--stamp);color:var(--stamp);}
+.tab-btn:hover:not(.active){color:var(--ink);}
+
+main{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+@media (max-width:880px){ main{grid-template-columns:1fr;} }
+
+.panel{background:var(--paper-card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;}
+.panel + .panel{margin-top:20px;}
+.panel h2{font-family:var(--font-mono);font-size:11.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-faint);margin:0 0 16px;display:flex;align-items:center;gap:10px;}
+.panel h2::after{content:"";flex:1;border-top:1px dashed var(--line-strong);}
+.panel h2 .h2-btn{text-transform:none;letter-spacing:0;font-family:var(--font-body);font-size:11px;font-weight:600;color:var(--stamp);background:none;border:none;cursor:pointer;padding:0;}
+
+/* preview */
+.preview-card{padding:14px 14px 16px;}
+.preview-card h2{margin-bottom:10px;}
+.preview-stage{background:#dedad0;border-radius:var(--radius);padding:10px;display:flex;justify-content:center;}
+.preview-stage svg{max-width:100%;height:auto;background:#fff;box-shadow:0 2px 10px rgba(30,42,56,0.18);}
+.preview-caption{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);margin-top:8px;text-align:center;}
+
+.stamp-group{border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 16px;margin-bottom:14px;background:var(--paper-card-2);}
+.stamp-group:last-child{margin-bottom:0;}
+.stamp-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.stamp-group-head label.switch-label{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:9px;cursor:pointer;}
+.stamp-group[data-off="true"] .stamp-group-body{opacity:0.35;pointer-events:none;}
+
+.switch{position:relative;width:34px;height:19px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;position:absolute;}
+.switch .track{position:absolute;inset:0;background:var(--line-strong);border-radius:20px;transition:background .15s;}
+.switch .track::after{content:"";position:absolute;width:14px;height:14px;left:2.5px;top:2.5px;background:#fff;border-radius:50%;transition:transform .15s;}
+.switch input:checked + .track{background:var(--stamp);}
+.switch input:checked + .track::after{transform:translateX(15px);}
+
+.field{margin-bottom:11px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;letter-spacing:0.2px;}
+.field input[type=text], .field input[type=number], .field input[type=password], .field select{
+  width:100%;padding:7px 9px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  background:#fff;font-family:var(--font-mono);font-size:12.5px;color:var(--ink);
+}
+.field input[type=file]{width:100%;font-size:12px;font-family:var(--font-body);}
+.hint{font-size:10.5px;color:var(--ink-faint);margin-top:4px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.checkbox-line{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);margin-top:6px;}
+.checkbox-line input{margin:0;}
+
+.pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px;}
+.pos-btn{border:1px solid var(--line-strong);background:#fff;border-radius:var(--radius);padding:7px 3px;font-size:9.5px;font-family:var(--font-mono);letter-spacing:0.2px;color:var(--ink-soft);cursor:pointer;text-align:center;text-transform:uppercase;}
+.pos-btn:hover{border-color:var(--stamp);color:var(--stamp);}
+.pos-btn.active{background:var(--stamp-soft);border-color:var(--stamp);color:var(--stamp);font-weight:600;}
+
+.color-row{display:flex;align-items:center;gap:10px;}
+.color-row input[type=color]{width:38px;height:30px;border:1px solid var(--line-strong);border-radius:var(--radius);padding:2px;background:#fff;cursor:pointer;}
+.color-row .swatch-label{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);flex:1;}
+
+.preset-row{display:flex;gap:8px;margin-bottom:16px;}
+.preset-row .btn{flex:1;font-size:12px;padding:8px 10px;}
+
+.security-note{font-size:11px;color:var(--ink-soft);background:var(--amber-soft);border:1px solid rgba(156,107,21,0.3);color:var(--amber);padding:8px 10px;border-radius:var(--radius);margin-top:10px;line-height:1.5;}
+
+.dropzone{border:2px dashed var(--line-strong);border-radius:var(--radius);padding:34px 20px;text-align:center;background:var(--paper-card-2);cursor:pointer;transition:border-color .15s, background .15s;}
+.dropzone.drag{border-color:var(--stamp);background:var(--stamp-soft);}
+.dropzone svg{margin-bottom:8px;color:var(--ink-faint);}
+.dropzone .dz-title{font-weight:600;font-size:14px;margin-bottom:3px;}
+.dropzone .dz-sub{font-size:12px;color:var(--ink-soft);}
+.dropzone input{display:none;}
+
+.list-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap;}
+.list-toolbar .field{margin-bottom:0;min-width:180px;}
+.file-list{margin-top:10px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--paper-card);font-size:13px;}
+.file-row:last-child{border-bottom:none;}
+.file-row .fname{flex:1;font-family:var(--font-mono);font-size:12px;word-break:break-all;}
+.file-row .fmeta{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
+.file-row .fsize{color:var(--ink-faint);font-size:11px;font-family:var(--font-mono);white-space:nowrap;}
+.file-row .order-btns{display:flex;flex-direction:column;gap:2px;}
+.file-row .order-btns button{border:1px solid var(--line-strong);background:#fff;border-radius:2px;width:18px;height:16px;font-size:9px;line-height:1;cursor:pointer;padding:0;}
+.file-row .remove-btn{border:none;background:none;color:var(--stamp);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;}
+.tag{font-family:var(--font-mono);font-size:9.5px;padding:2px 6px;border-radius:9px;white-space:nowrap;}
+.tag-warn{background:var(--amber-soft);color:var(--amber);}
+.tag-ok{background:var(--teal-soft);color:var(--teal);}
+
+.action-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center;}
+.btn{font-family:var(--font-body);font-weight:600;font-size:13.5px;padding:10px 18px;border-radius:var(--radius);border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;transition:transform .1s ease, opacity .15s;}
+.btn:hover{opacity:0.88;}
+.btn:active{transform:translateY(1px);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn.secondary{background:transparent;color:var(--ink);}
+.btn.stamp-cta{background:var(--stamp);border-color:var(--stamp);}
+.btn.teal-cta{background:var(--teal);border-color:var(--teal);}
+.btn.small{padding:7px 12px;font-size:12px;}
+
+.progress-wrap{margin-top:14px;display:none;}
+.progress-wrap.show{display:block;}
+.progress-label{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;}
+.progress-bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;}
+.progress-bar > div{height:100%;background:var(--stamp);width:0%;transition:width .2s ease;}
+
+.results{margin-top:18px;}
+.result-row{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-card);margin-bottom:8px;position:relative;overflow:hidden;}
+.result-row .rname{flex:1;font-family:var(--font-mono);font-size:12px;word-break:break-all;}
+.result-badge{font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.5px;color:var(--teal);border:1px solid var(--teal);border-radius:3px;padding:2px 7px;transform:rotate(-4deg);animation:stampin .28s ease-out;}
+@media (prefers-reduced-motion: reduce){ .result-badge{animation:none;} }
+@keyframes stampin{from{opacity:0;transform:rotate(-4deg) scale(1.6);}to{opacity:1;transform:rotate(-4deg) scale(1);}}
+.result-row a.dl{font-size:12px;font-weight:600;color:var(--stamp);text-decoration:none;border:1px solid var(--stamp);padding:5px 10px;border-radius:var(--radius);}
+.result-row a.dl:hover{background:var(--stamp-soft);}
+.error-row{border-color:var(--stamp);}
+.error-row .rname{color:var(--stamp);}
+.skip-row{border-style:dashed;}
+.skip-row .rname{color:var(--amber);}
+
+.dry-run-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px;}
+.dry-run-table th{text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-faint);border-bottom:1px solid var(--line-strong);padding:6px 8px;}
+.dry-run-table td{padding:7px 8px;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:11.5px;}
+.dry-run-table tr:last-child td{border-bottom:none;}
+
+.split-mode-row{display:flex;gap:14px;margin-bottom:11px;}
+.split-mode-row label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;}
+
+.empty-note{font-size:12.5px;color:var(--ink-faint);padding:14px 4px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.footer-note{margin-top:30px;text-align:center;font-size:11.5px;color:var(--ink-faint);font-family:var(--font-mono);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <div class="stamp-badge">PDF<br>STAMP</div>
+      <div>
+        <h1>PDF Stamp Toolkit</h1>
+        <p>Filenames, logos, dates, watermarks &amp; page numbers — stamped, batched, split, or merged.</p>
+      </div>
+    </div>
+    <div class="privacy-note">⌁ Runs entirely in your browser — files are never uploaded anywhere</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="single"><span class="num">01</span> Single File</button>
+    <button class="tab-btn" data-tab="batch"><span class="num">02</span> Batch Folder</button>
+    <button class="tab-btn" data-tab="merge"><span class="num">03</span> Merge Folder</button>
+    <button class="tab-btn" data-tab="split"><span class="num">04</span> Split File</button>
+  </nav>
+
+  <main>
+    <!-- ============ SETTINGS PANEL (shared) ============ -->
+    <div>
+      <section class="panel preview-card">
+        <h2>Live preview</h2>
+        <div class="preview-stage"><svg id="preview-svg" viewBox="0 0 300 388" width="220" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="preview-caption" id="preview-caption">Showing a placeholder page — select a file to preview it</div>
+      </section>
+
+      <section class="panel">
+        <h2>Presets</h2>
+        <div class="preset-row">
+          <button class="btn secondary small" id="preset-save">Save settings…</button>
+          <button class="btn secondary small" id="preset-load-btn">Load settings…</button>
+          <input type="file" id="preset-load" accept="application/json" style="display:none;">
+        </div>
+
+        <div class="stamp-group" id="group-filename">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="fn-enable" checked><span class="track"></span></span> Filename</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-filename" data-selected="bottom-right">
+                <button type="button" class="pos-btn" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn active" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Font size</label><input type="number" id="fn-size" value="9" min="4" max="48"></div>
+              <div class="field"><label>Font</label>
+                <select id="fn-font">
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="HelveticaBold">Helvetica Bold</option>
+                  <option value="TimesRoman">Times</option>
+                  <option value="Courier">Courier</option>
+                </select>
+              </div>
+            </div>
+            <label class="checkbox-line"><input type="checkbox" id="fn-keep-ext"> Include .pdf extension</label>
+          </div>
+        </div>
+
+        <div class="stamp-group" id="group-logo" data-off="true">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="logo-enable"><span class="track"></span></span> Company logo (PNG)</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field"><label>Logo file</label><input type="file" id="logo-file" accept="image/png"></div>
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-logo" data-selected="top-left">
+                <button type="button" class="pos-btn active" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="field"><label>Width (% of page width): <span id="logo-scale-val">12</span>%</label>
+              <input type="range" id="logo-scale" min="3" max="40" value="12" style="width:100%;">
+            </div>
+          </div>
+        </div>
+
+        <div class="stamp-group" id="group-pagenum">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="pn-enable" checked><span class="track"></span></span> Page number</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field">
+              <label>Text template</label>
+              <input type="text" id="pn-template" value="Page {n} of {total}">
+              <div class="hint">Use <code>{n}</code> for page number and <code>{total}</code> for page count.</div>
+            </div>
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-pagenum" data-selected="bottom-center">
+                <button type="button" class="pos-btn" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn active" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="field"><label>Font size</label><input type="number" id="pn-size" value="9" min="4" max="48"></div>
+          </div>
+        </div>
+
+        <div class="stamp-group" id="group-date" data-off="true">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="date-enable"><span class="track"></span></span> Date stamp</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field">
+              <label>Text template</label>
+              <input type="text" id="date-template" value="{date}">
+              <div class="hint">Use <code>{date}</code> for today's date.</div>
+            </div>
+            <div class="field"><label>Date format</label>
+              <select id="date-format">
+                <option value="iso">2026-08-18 (YYYY-MM-DD)</option>
+                <option value="us">08/18/2026 (MM/DD/YYYY)</option>
+                <option value="long">August 18, 2026</option>
+                <option value="dmy">18 Aug 2026</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-date" data-selected="bottom-left">
+                <button type="button" class="pos-btn" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn active" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="field"><label>Font size</label><input type="number" id="date-size" value="9" min="4" max="48"></div>
+          </div>
+        </div>
+
+        <div class="stamp-group" id="group-watermark" data-off="true">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="wm-enable"><span class="track"></span></span> Watermark</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field"><label>Text</label><input type="text" id="wm-text" value="DRAFT"></div>
+            <div class="row2">
+              <div class="field"><label>Font size</label><input type="number" id="wm-size" value="64" min="10" max="200"></div>
+              <div class="field"><label>Rotation (°)</label><input type="number" id="wm-rotate" value="45" min="-90" max="90"></div>
+            </div>
+            <div class="field"><label>Opacity: <span id="wm-opacity-val">15</span>%</label>
+              <input type="range" id="wm-opacity" min="3" max="80" value="15" style="width:100%;">
+            </div>
+            <div class="field color-row">
+              <input type="color" id="wm-color" value="#B23A2E">
+              <span class="swatch-label">Watermark color</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Colors &amp; spacing</h2>
+        <div class="field color-row">
+          <input type="color" id="fg-color" value="#1E2A38">
+          <span class="swatch-label">Foreground (filename / date / page number text)</span>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label class="checkbox-line" style="margin-top:0;"><input type="checkbox" id="bg-enable" checked> Background box behind stamps</label>
+        </div>
+        <div class="field color-row">
+          <input type="color" id="bg-color" value="#F2EFE6">
+          <span class="swatch-label">Background box color</span>
+        </div>
+        <div class="field"><label>Background opacity: <span id="bg-opacity-val">85</span>%</label>
+          <input type="range" id="bg-opacity" min="10" max="100" value="85" style="width:100%;">
+        </div>
+        <div class="field"><label>Page margin (pt)</label><input type="number" id="margin" value="24" min="0" max="120"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Password protection</h2>
+        <label class="checkbox-line" style="margin-top:0;"><input type="checkbox" id="pw-enable"> Password-protect output PDFs</label>
+        <div class="field" style="margin-top:11px;"><label>Password (required to open)</label><input type="password" id="pw-user" placeholder="Leave blank = no password"></div>
+        <div class="field"><label>Owner password (optional)</label><input type="password" id="pw-owner" placeholder="Defaults to the password above"></div>
+        <div class="security-note">Uses the classic PDF "Standard Security" RC4-40 handler for broad reader compatibility. It's a real password gate supported by virtually every PDF reader, but it's dated, legacy-strength crypto — don't rely on it for highly sensitive documents.</div>
+      </section>
+
+      <section class="panel">
+        <h2>Workflow</h2>
+        <label class="checkbox-line" style="margin-top:0;"><input type="checkbox" id="skip-stamped" checked> Skip files this tool already stamped</label>
+        <div class="hint">Checked via a small marker this tool adds to a PDF's Keywords metadata after stamping.</div>
+      </section>
+    </div>
+
+    <!-- ============ WORKSPACE ============ -->
+    <div>
+      <!-- TAB 1: SINGLE FILE -->
+      <section class="panel tab-panel active" id="tab-single">
+        <h2>Single file</h2>
+        <div class="dropzone" id="dz-single">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <div class="dz-title">Drop a PDF here or click to browse</div>
+          <div class="dz-sub">One file · stamped with your settings</div>
+          <input type="file" id="single-file" accept="application/pdf">
+        </div>
+        <div class="file-list" id="single-file-list" style="display:none;"></div>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="single-process" disabled>Stamp PDF</button>
+          <button class="btn secondary" id="single-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="single-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="results" id="single-results"></div>
+      </section>
+
+      <!-- TAB 2: BATCH FOLDER -->
+      <section class="panel tab-panel" id="tab-batch">
+        <h2>Batch folder — stamp every PDF separately</h2>
+        <div class="dropzone" id="dz-batch">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+          <div class="dz-title">Click to choose a folder</div>
+          <div class="dz-sub">Every PDF inside will be stamped and kept as a separate file</div>
+          <input type="file" id="batch-files" webkitdirectory multiple>
+        </div>
+        <div class="list-toolbar" id="batch-toolbar" style="display:none;">
+          <div class="field">
+            <label>Sort by</label>
+            <select id="batch-sort">
+              <option value="name-asc">Name (A–Z)</option>
+              <option value="name-desc">Name (Z–A)</option>
+              <option value="date-asc">Date modified (old→new)</option>
+              <option value="date-desc">Date modified (new→old)</option>
+            </select>
+          </div>
+          <button class="btn secondary small" id="batch-dry-run">Preview folder contents</button>
+        </div>
+        <div class="file-list" id="batch-file-list" style="display:none;"></div>
+        <div id="batch-dry-run-results"></div>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="batch-process" disabled>Stamp all files</button>
+          <button class="btn secondary" id="batch-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="batch-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="action-row" id="batch-download-row" style="display:none;">
+          <button class="btn teal-cta" id="batch-zip">Download all as ZIP</button>
+          <span class="hint" style="margin:0;">or download files individually below</span>
+        </div>
+        <div class="results" id="batch-results"></div>
+      </section>
+
+      <!-- TAB 3: MERGE FOLDER -->
+      <section class="panel tab-panel" id="tab-merge">
+        <h2>Merge folder — combine into one stamped PDF</h2>
+        <div class="dropzone" id="dz-merge">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3h7l4 4v14H7V3Z"/><path d="M17 3v4h4"/><path d="M9 12h6M9 16h6"/></svg>
+          <div class="dz-title">Click to choose a folder</div>
+          <div class="dz-sub">Files merge in the order shown below — reorder with the arrows</div>
+          <input type="file" id="merge-files" webkitdirectory multiple>
+        </div>
+        <div class="list-toolbar" id="merge-toolbar" style="display:none;">
+          <label class="checkbox-line" style="margin-top:0;"><input type="checkbox" id="merge-bookmarks" checked> Add a bookmark per source file</label>
+          <button class="btn secondary small" id="merge-dry-run">Preview folder contents</button>
+        </div>
+        <div class="file-list" id="merge-file-list" style="display:none;"></div>
+        <div id="merge-dry-run-results"></div>
+        <div class="hint" style="margin-top:8px;">Each page keeps a stamp of its own original source filename, plus continuous page numbering across the merged document.</div>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="merge-process" disabled>Merge &amp; stamp</button>
+          <button class="btn secondary" id="merge-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="merge-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="results" id="merge-results"></div>
+      </section>
+
+      <!-- TAB 4: SPLIT FILE -->
+      <section class="panel tab-panel" id="tab-split">
+        <h2>Split file — break one PDF into several</h2>
+        <div class="dropzone" id="dz-split">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M12 2v20" stroke-dasharray="2 2"/></svg>
+          <div class="dz-title">Drop a PDF here or click to browse</div>
+          <div class="dz-sub">One file · split into several, each keeping your stamps</div>
+          <input type="file" id="split-file" accept="application/pdf">
+        </div>
+        <div class="file-list" id="split-file-list" style="display:none;"></div>
+        <div class="split-mode-row">
+          <label><input type="radio" name="split-mode" value="single" checked> One PDF per page</label>
+          <label><input type="radio" name="split-mode" value="chunks"> Every <input type="number" id="split-n" value="5" min="1" max="500" style="width:52px;padding:4px 6px;font-family:var(--font-mono);border:1px solid var(--line-strong);border-radius:3px;"> pages</label>
+        </div>
+        <label class="checkbox-line" style="margin-top:0;"><input type="checkbox" id="split-apply-stamps" checked> Apply current stamp settings to each piece</label>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="split-process" disabled>Split PDF</button>
+          <button class="btn secondary" id="split-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="split-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="action-row" id="split-download-row" style="display:none;">
+          <button class="btn teal-cta" id="split-zip">Download all as ZIP</button>
+          <span class="hint" style="margin:0;">or download files individually below</span>
+        </div>
+        <div class="results" id="split-results"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="footer-note">No files or data leave this browser tab — processing happens entirely on your machine.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var STAMPED_MARKER = 'pdf-stamp-toolkit:stamped';
+
+  /* ================= tabs ================= */
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  /* ================= position grids ================= */
+  document.querySelectorAll('.pos-grid').forEach(function(grid){
+    grid.addEventListener('click', function(e){
+      var b = e.target.closest('.pos-btn');
+      if(!b) return;
+      grid.querySelectorAll('.pos-btn').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      grid.dataset.selected = b.dataset.pos;
+      renderPreview();
+    });
+  });
+
+  function wireSwitch(checkboxId, groupId){
+    var cb = document.getElementById(checkboxId);
+    var group = document.getElementById(groupId);
+    function sync(){ group.dataset.off = (!cb.checked).toString(); renderPreview(); }
+    cb.addEventListener('change', sync);
+    sync();
+  }
+  wireSwitch('fn-enable','group-filename');
+  wireSwitch('logo-enable','group-logo');
+  wireSwitch('pn-enable','group-pagenum');
+  wireSwitch('date-enable','group-date');
+  wireSwitch('wm-enable','group-watermark');
+
+  document.getElementById('logo-scale').addEventListener('input', function(){ document.getElementById('logo-scale-val').textContent = this.value; renderPreview(); });
+  document.getElementById('bg-opacity').addEventListener('input', function(){ document.getElementById('bg-opacity-val').textContent = this.value; renderPreview(); });
+  document.getElementById('wm-opacity').addEventListener('input', function(){ document.getElementById('wm-opacity-val').textContent = this.value; renderPreview(); });
+
+  // Any other settings-panel input change should also refresh the preview.
+  document.querySelectorAll('main > div:first-child input, main > div:first-child select').forEach(function(el){
+    el.addEventListener('input', renderPreview);
+    el.addEventListener('change', renderPreview);
+  });
+
+  /* ================= shared helpers ================= */
+  var PDFLibRef = window.PDFLib;
+  var StandardFonts = PDFLibRef.StandardFonts;
+  var rgbFn = PDFLibRef.rgb;
+  var degreesFn = PDFLibRef.degrees;
+
+  function hexToRgb01(hex){
+    hex = hex.replace('#','');
+    var r = parseInt(hex.substring(0,2),16)/255;
+    var g = parseInt(hex.substring(2,4),16)/255;
+    var b = parseInt(hex.substring(4,6),16)/255;
+    return rgbFn(r,g,b);
+  }
+
+  function fmtBytes(n){
+    if(n < 1024) return n + ' B';
+    if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/1024/1024).toFixed(2) + ' MB';
+  }
+
+  function formatDate(d, key){
+    var y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    var mm = String(m+1).padStart(2,'0'), dd = String(day).padStart(2,'0');
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if(key === 'us') return mm + '/' + dd + '/' + y;
+    if(key === 'long') return months[m] + ' ' + day + ', ' + y;
+    if(key === 'dmy') return dd + ' ' + monthsShort[m] + ' ' + y;
+    return y + '-' + mm + '-' + dd; // iso default
+  }
+
+  function readSettings(){
+    return {
+      filename:{
+        enabled: document.getElementById('fn-enable').checked,
+        position: document.getElementById('grid-filename').dataset.selected,
+        size: parseFloat(document.getElementById('fn-size').value) || 9,
+        font: document.getElementById('fn-font').value,
+        keepExt: document.getElementById('fn-keep-ext').checked
+      },
+      logo:{
+        enabled: document.getElementById('logo-enable').checked,
+        position: document.getElementById('grid-logo').dataset.selected,
+        scalePct: parseFloat(document.getElementById('logo-scale').value) || 12,
+        bytes: window.__logoBytes || null,
+        dataUrl: window.__logoDataUrl || null
+      },
+      pageNumber:{
+        enabled: document.getElementById('pn-enable').checked,
+        template: document.getElementById('pn-template').value || 'Page {n} of {total}',
+        position: document.getElementById('grid-pagenum').dataset.selected,
+        size: parseFloat(document.getElementById('pn-size').value) || 9
+      },
+      dateStamp:{
+        enabled: document.getElementById('date-enable').checked,
+        template: document.getElementById('date-template').value || '{date}',
+        format: document.getElementById('date-format').value,
+        position: document.getElementById('grid-date').dataset.selected,
+        size: parseFloat(document.getElementById('date-size').value) || 9
+      },
+      watermark:{
+        enabled: document.getElementById('wm-enable').checked,
+        text: document.getElementById('wm-text').value || 'DRAFT',
+        size: parseFloat(document.getElementById('wm-size').value) || 64,
+        rotate: parseFloat(document.getElementById('wm-rotate').value) || 45,
+        opacity: (parseFloat(document.getElementById('wm-opacity').value) || 15) / 100,
+        color: hexToRgb01(document.getElementById('wm-color').value)
+      },
+      fg: hexToRgb01(document.getElementById('fg-color').value),
+      bgEnabled: document.getElementById('bg-enable').checked,
+      bg: hexToRgb01(document.getElementById('bg-color').value),
+      bgOpacity: (parseFloat(document.getElementById('bg-opacity').value) || 85) / 100,
+      margin: parseFloat(document.getElementById('margin').value) || 24,
+      security:{
+        enabled: document.getElementById('pw-enable').checked,
+        userPw: document.getElementById('pw-user').value || '',
+        ownerPw: document.getElementById('pw-owner').value || ''
+      },
+      skipStamped: document.getElementById('skip-stamped').checked
+    };
+  }
+
+  document.getElementById('logo-file').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      window.__logoBytes = new Uint8Array(reader.result);
+      var b64 = arrayBufferToBase64(reader.result);
+      window.__logoDataUrl = 'data:image/png;base64,' + b64;
+      renderPreview();
+    };
+    reader.readAsArrayBuffer(f);
+  });
+
+  function arrayBufferToBase64(buf){
+    var bytes = new Uint8Array(buf);
+    var binary = '';
+    for(var i=0;i<bytes.length;i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+
+  function getXY(position, pageW, pageH, w, h, margin){
+    var x, y;
+    if(position === 'top-left'){ x = margin; y = pageH - margin - h; }
+    else if(position === 'top-center'){ x = (pageW - w) / 2; y = pageH - margin - h; }
+    else if(position === 'top-right'){ x = pageW - margin - w; y = pageH - margin - h; }
+    else if(position === 'bottom-left'){ x = margin; y = margin; }
+    else if(position === 'bottom-center'){ x = (pageW - w) / 2; y = margin; }
+    else { x = pageW - margin - w; y = margin; } // bottom-right
+    return {x:x, y:y};
+  }
+
+  function drawBgBox(page, x, y, w, h, pad, settings){
+    if(!settings.bgEnabled) return;
+    page.drawRectangle({ x: x - pad, y: y - pad, width: w + pad*2, height: h + pad*2, color: settings.bg, opacity: settings.bgOpacity });
+  }
+
+  function drawTextStamp(page, font, text, size, position, margin, settings){
+    if(!text) return;
+    var w = font.widthOfTextAtSize(text, size);
+    var h = font.heightAtSize(size);
+    var pos = getXY(position, page.getWidth(), page.getHeight(), w, h, margin);
+    drawBgBox(page, pos.x, pos.y - (h*0.22), w, h, 4, settings);
+    page.drawText(text, {x: pos.x, y: pos.y, size: size, font: font, color: settings.fg});
+  }
+
+  function drawLogoStamp(page, embeddedImg, position, scalePct, margin, settings){
+    if(!embeddedImg) return;
+    var pageW = page.getWidth();
+    var targetW = pageW * (scalePct/100);
+    var factor = targetW / embeddedImg.width;
+    var dims = embeddedImg.scale(factor);
+    var pos = getXY(position, pageW, page.getHeight(), dims.width, dims.height, margin);
+    drawBgBox(page, pos.x, pos.y, dims.width, dims.height, 5, settings);
+    page.drawImage(embeddedImg, {x: pos.x, y: pos.y, width: dims.width, height: dims.height});
+  }
+
+  function drawWatermark(page, font, wm){
+    if(!wm.enabled || !wm.text) return;
+    var pageW = page.getWidth(), pageH = page.getHeight();
+    var textWidth = font.widthOfTextAtSize(wm.text, wm.size);
+    var angleRad = wm.rotate * Math.PI / 180;
+    var x = pageW/2 - (textWidth/2) * Math.cos(angleRad);
+    var y = pageH/2 - (textWidth/2) * Math.sin(angleRad);
+    page.drawText(wm.text, { x: x, y: y, size: wm.size, font: font, color: wm.color, opacity: wm.opacity, rotate: degreesFn(wm.rotate) });
+  }
+
+  function fontConst(key){ return StandardFonts[key] || StandardFonts.Helvetica; }
+
+  /**
+   * Stamp every page of pdfDoc.
+   * filenameFor(pageIndex) -> filename string for the filename stamp on that page
+   * totalOverride -> {total} placeholder value; defaults to this doc's own page count
+   */
+  async function stampDocument(pdfDoc, settings, filenameFor, totalOverride, embeddedLogo){
+    var font = await pdfDoc.embedFont(fontConst(settings.filename.font));
+    var pages = pdfDoc.getPages();
+    var total = totalOverride || pages.length;
+    var today = new Date();
+    for(var i=0;i<pages.length;i++){
+      var page = pages[i];
+      if(settings.filename.enabled){
+        var raw = filenameFor(i);
+        var text = settings.filename.keepExt ? raw : raw.replace(/\.pdf$/i,'');
+        drawTextStamp(page, font, text, settings.filename.size, settings.filename.position, settings.margin, settings);
+      }
+      if(settings.logo.enabled && embeddedLogo){
+        drawLogoStamp(page, embeddedLogo, settings.logo.position, settings.logo.scalePct, settings.margin, settings);
+      }
+      if(settings.pageNumber.enabled){
+        var txt = settings.pageNumber.template.replace(/\{n\}/g, String(i+1)).replace(/\{total\}/g, String(total));
+        drawTextStamp(page, font, txt, settings.pageNumber.size, settings.pageNumber.position, settings.margin, settings);
+      }
+      if(settings.dateStamp.enabled){
+        var dtext = settings.dateStamp.template.replace(/\{date\}/g, formatDate(today, settings.dateStamp.format));
+        drawTextStamp(page, font, dtext, settings.dateStamp.size, settings.dateStamp.position, settings.margin, settings);
+      }
+      if(settings.watermark.enabled){
+        drawWatermark(page, font, settings.watermark);
+      }
+    }
+    // Mark this document so "skip already-stamped files" can detect it later.
+    var existingKw = pdfDoc.getKeywords();
+    var kwList = existingKw ? [existingKw, STAMPED_MARKER] : [STAMPED_MARKER];
+    pdfDoc.setKeywords(kwList);
+    return pdfDoc;
+  }
+
+  function isAlreadyStamped(pdfDoc){
+    var kw = pdfDoc.getKeywords();
+    return !!(kw && kw.indexOf(STAMPED_MARKER) !== -1);
+  }
+
+  async function hasFontResources(pdfDoc){
+    try{
+      var page = pdfDoc.getPage(0);
+      var res = page.node.Resources();
+      if(!res) return false;
+      var fontDict = res.lookup(PDFLibRef.PDFName.of('Font'));
+      return !!(fontDict && fontDict.keys && fontDict.keys().length > 0);
+    }catch(e){ return true; } // if we can't tell, don't warn
+  }
+
+  /* ---------------- RC4 / MD5 password protection ---------------- */
+  function md5(bytes) {
+    function rotl(x, c) { return (x << c) | (x >>> (32 - c)); }
+    function add32(a, b) { return (a + b) >>> 0; }
+    var s = [7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+             5, 9,14,20,5, 9,14,20,5, 9,14,20,5, 9,14,20,
+             4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+             6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+    var K = new Int32Array([
+      -680876936,-389564586,606105819,-1044525330,-176418897,1200080426,-1473231341,-45705983,
+      1770035416,-1958414417,-42063,-1990404162,1804603682,-40341101,-1502002290,1236535329,
+      -165796510,-1069501632,643717713,-373897302,-701558691,38016083,-660478335,-405537848,
+      568446438,-1019803690,-187363961,1163531501,-1444681467,-51403784,1735328473,-1926607734,
+      -378558,-2022574463,1839030562,-35309556,-1530992060,1272893353,-155497632,-1094730640,
+      681279174,-358537222,-722521979,76029189,-640364487,-421815835,530742520,-995338651,
+      -198630844,1126891415,-1416354905,-57434055,1700485571,-1894986606,-1051523,-2054922799,
+      1873313359,-30611744,-1560198380,1309151649,-145523070,-1120210379,718787259,-343485551
+    ]);
+    var msgLen = bytes.length;
+    var withOne = new Uint8Array(((msgLen + 8) >> 6) * 64 + 64);
+    withOne.set(bytes);
+    withOne[msgLen] = 0x80;
+    var bitLenLow = (msgLen * 8) >>> 0;
+    var bitLenHigh = Math.floor(msgLen / 0x20000000);
+    var view = new DataView(withOne.buffer);
+    view.setUint32(withOne.length - 8, bitLenLow, true);
+    view.setUint32(withOne.length - 4, bitLenHigh, true);
+    var a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+    for (var chunkStart = 0; chunkStart < withOne.length; chunkStart += 64) {
+      var M = new Int32Array(16);
+      for (var j = 0; j < 16; j++) M[j] = view.getInt32(chunkStart + j * 4, true);
+      var A = a0, B = b0, C = c0, D = d0;
+      for (var i = 0; i < 64; i++) {
+        var F, g;
+        if (i < 16) { F = (B & C) | (~B & D); g = i; }
+        else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+        else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+        else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+        F = add32(F, add32(A, add32(K[i], M[g])));
+        A = D; D = C; C = B;
+        B = add32(B, rotl(F, s[i]));
+      }
+      a0 = add32(a0, A); b0 = add32(b0, B); c0 = add32(c0, C); d0 = add32(d0, D);
+    }
+    var out = new Uint8Array(16);
+    var outView = new DataView(out.buffer);
+    outView.setInt32(0, a0, true); outView.setInt32(4, b0, true);
+    outView.setInt32(8, c0, true); outView.setInt32(12, d0, true);
+    return out;
+  }
+
+  function rc4(key, data) {
+    var S = new Uint8Array(256);
+    for (var i = 0; i < 256; i++) S[i] = i;
+    var j = 0;
+    for (i = 0; i < 256; i++) {
+      j = (j + S[i] + key[i % key.length]) & 0xff;
+      var tmp = S[i]; S[i] = S[j]; S[j] = tmp;
+    }
+    var out = new Uint8Array(data.length);
+    i = 0; j = 0;
+    for (var k = 0; k < data.length; k++) {
+      i = (i + 1) & 0xff;
+      j = (j + S[i]) & 0xff;
+      tmp = S[i]; S[i] = S[j]; S[j] = tmp;
+      out[k] = data[k] ^ S[(S[i] + S[j]) & 0xff];
+    }
+    return out;
+  }
+
+  var PAD = new Uint8Array([
+    0x28,0xBF,0x4E,0x5E,0x4E,0x75,0x8A,0x41,0x64,0x00,0x4E,0x56,0xFF,0xFA,0x01,0x08,
+    0x2E,0x2E,0x00,0xB6,0xD0,0x68,0x3E,0x80,0x2F,0x0C,0xA9,0xFE,0x64,0x53,0x69,0x7A
+  ]);
+
+  function padPassword(pw) {
+    var bytes = new TextEncoder().encode(pw || '');
+    var out = new Uint8Array(32);
+    var n = Math.min(bytes.length, 32);
+    out.set(bytes.subarray(0, n));
+    out.set(PAD.subarray(0, 32 - n), n);
+    return out;
+  }
+
+  function concatBytes(){
+    var arrs = Array.prototype.slice.call(arguments);
+    var total = arrs.reduce(function(s,a){return s+a.length;}, 0);
+    var out = new Uint8Array(total);
+    var off = 0;
+    arrs.forEach(function(a){ out.set(a, off); off += a.length; });
+    return out;
+  }
+
+  function int32LE(n) {
+    var out = new Uint8Array(4);
+    new DataView(out.buffer).setInt32(0, n, true);
+    return out;
+  }
+
+  function computeO(ownerPw, userPw) {
+    var padded = padPassword(ownerPw || userPw);
+    var key = md5(padded).subarray(0, 5);
+    var paddedUser = padPassword(userPw);
+    return rc4(key, paddedUser);
+  }
+
+  function computeFileKey(userPw, oValue, pValue, idBytes) {
+    var input = concatBytes(padPassword(userPw), oValue, int32LE(pValue), idBytes);
+    return md5(input).subarray(0, 5);
+  }
+
+  function computeU(fileKey) { return rc4(fileKey, PAD); }
+
+  function objectKey(fileKey, objNum, genNum) {
+    var extra = new Uint8Array(5);
+    extra[0] = objNum & 0xff; extra[1] = (objNum >> 8) & 0xff; extra[2] = (objNum >> 16) & 0xff;
+    extra[3] = genNum & 0xff; extra[4] = (genNum >> 8) & 0xff;
+    var hash = md5(concatBytes(fileKey, extra));
+    var n = Math.min(fileKey.length + 5, 16);
+    return hash.subarray(0, n);
+  }
+
+  function bytesToHex(bytes) {
+    var out = '';
+    for(var i=0;i<bytes.length;i++) out += bytes[i].toString(16).padStart(2,'0');
+    return out;
+  }
+
+  function randomBytes16(){
+    var out = new Uint8Array(16);
+    if(window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(out);
+    else for(var i=0;i<16;i++) out[i] = Math.floor(Math.random()*256);
+    return out;
+  }
+
+  // Encrypts pdfDoc and returns final serialized bytes. See long-form note in
+  // the project notes: content streams must be forced into their final
+  // compressed form *before* we walk the object graph, or the writer will
+  // silently recompile them after encryption and clobber the ciphertext.
+  async function encryptPdfDocument(pdfDoc, userPassword, ownerPassword){
+    await pdfDoc.flush();
+    var context = pdfDoc.context;
+    var PDFContentStream = PDFLibRef.PDFContentStream;
+    var PDFRawStream = PDFLibRef.PDFRawStream;
+    var PDFString = PDFLibRef.PDFString;
+    var PDFHexString = PDFLibRef.PDFHexString;
+    var PDFArray = PDFLibRef.PDFArray;
+    var PDFDict = PDFLibRef.PDFDict;
+    var PDFWriter = PDFLibRef.PDFWriter;
+
+    context.enumerateIndirectObjects().forEach(function(pair){
+      var ref = pair[0], obj = pair[1];
+      if(obj instanceof PDFContentStream){
+        var finalBytes = obj.getContents();
+        context.assign(ref, PDFRawStream.of(obj.dict, finalBytes));
+      }
+    });
+
+    var idBytes = randomBytes16();
+    var idHex = PDFHexString.of(bytesToHex(idBytes));
+    context.trailerInfo.ID = context.obj([idHex, idHex]);
+
+    var P = -1;
+    var oValue = computeO(ownerPassword, userPassword);
+    var fileKey = computeFileKey(userPassword, oValue, P, idBytes);
+    var uValue = computeU(fileKey);
+
+    var encryptDict = context.obj({
+      Filter: 'Standard', V: 1, R: 2,
+      O: PDFHexString.of(bytesToHex(oValue)),
+      U: PDFHexString.of(bytesToHex(uValue)),
+      P: P
+    });
+    var encryptRef = context.register(encryptDict);
+    context.trailerInfo.Encrypt = encryptRef;
+
+    function encryptValue(val, key){
+      if(val instanceof PDFString || val instanceof PDFHexString){
+        return PDFHexString.of(bytesToHex(rc4(key, val.asBytes())));
+      }
+      if(val instanceof PDFArray){
+        for(var i=0;i<val.size();i++){
+          var replaced = encryptValue(val.get(i), key);
+          if(replaced) val.set(i, replaced);
+        }
+        return null;
+      }
+      if(val instanceof PDFDict){
+        val.keys().forEach(function(k){
+          var replaced = encryptValue(val.get(k), key);
+          if(replaced) val.set(k, replaced);
+        });
+        return null;
+      }
+      return null;
+    }
+
+    context.enumerateIndirectObjects().forEach(function(pair){
+      var ref = pair[0], obj = pair[1];
+      if(ref === encryptRef) return;
+      var key = objectKey(fileKey, ref.objectNumber, ref.generationNumber);
+      if(obj instanceof PDFRawStream){
+        encryptValue(obj.dict, key);
+        obj.contents = rc4(key, obj.getContents());
+      } else {
+        encryptValue(obj, key);
+      }
+    });
+
+    return PDFWriter.forContext(context, 50).serializeToBuffer();
+  }
+
+  /* ---------------- bookmarks (merge mode) ---------------- */
+  function addBookmarks(mergedDoc, entries){
+    var context = mergedDoc.context;
+    var PDFName = PDFLibRef.PDFName;
+    var PDFString = PDFLibRef.PDFString;
+    var pages = mergedDoc.getPages();
+    var itemRefs = entries.map(function(){ return context.nextRef(); });
+    var outlineRootRef = context.nextRef();
+
+    entries.forEach(function(entry, i){
+      var page = pages[entry.pageIndex];
+      var itemDict = context.obj({ Title: PDFString.of(entry.title), Parent: outlineRootRef, Dest: [page.ref, PDFName.of('Fit')] });
+      if(i > 0) itemDict.set(PDFName.of('Prev'), itemRefs[i-1]);
+      if(i < entries.length - 1) itemDict.set(PDFName.of('Next'), itemRefs[i+1]);
+      context.assign(itemRefs[i], itemDict);
+    });
+
+    var outlineRoot = context.obj({ Type: 'Outlines', Count: entries.length });
+    if(entries.length > 0){
+      outlineRoot.set(PDFName.of('First'), itemRefs[0]);
+      outlineRoot.set(PDFName.of('Last'), itemRefs[itemRefs.length - 1]);
+    }
+    context.assign(outlineRootRef, outlineRoot);
+    mergedDoc.catalog.set(PDFName.of('Outlines'), outlineRootRef);
+    mergedDoc.catalog.set(PDFName.of('PageMode'), PDFName.of('UseOutlines'));
+  }
+
+  /* ---------------- final-bytes helper (handles optional encryption) ---------------- */
+  async function finalizeBytes(pdfDoc, settings){
+    if(settings.security.enabled && settings.security.userPw){
+      return await encryptPdfDocument(pdfDoc, settings.security.userPw, settings.security.ownerPw || settings.security.userPw);
+    }
+    return await pdfDoc.save();
+  }
+
+  function downloadBlob(bytes, filename){
+    var blob = new Blob([bytes], {type:'application/pdf'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function pdfFilesFromFileList(fileList){
+    return Array.prototype.filter.call(fileList, function(f){ return /\.pdf$/i.test(f.name); })
+      .sort(function(a,b){ return a.name.localeCompare(b.name); });
+  }
+
+  function readFileAsArrayBuffer(file){
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(r.result); };
+      r.onerror = reject;
+      r.readAsArrayBuffer(file);
+    });
+  }
+
+  function yieldToUI(){ return new Promise(function(r){ setTimeout(r, 0); }); }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  /* ================= LIVE PREVIEW (no pdf.js — WYSIWYG mockup) ================= */
+  window.__previewCtx = { pageW: 612, pageH: 792, filename: 'example.pdf', totalPages: 1, isPlaceholder: true };
+
+  async function setPreviewFile(file){
+    try{
+      var bytes = await readFileAsArrayBuffer(file);
+      var doc = await PDFLibRef.PDFDocument.load(bytes, {updateMetadata:false});
+      var p0 = doc.getPage(0);
+      window.__previewCtx = { pageW: p0.getWidth(), pageH: p0.getHeight(), filename: file.name, totalPages: doc.getPageCount(), isPlaceholder: false };
+    }catch(e){
+      window.__previewCtx = { pageW: 612, pageH: 792, filename: file.name, totalPages: 1, isPlaceholder: false };
+    }
+    renderPreview();
+  }
+
+  function renderPreview(){
+    var ctx = window.__previewCtx || { pageW:612, pageH:792, filename:'example.pdf', totalPages:1, isPlaceholder:true };
+    var settings = readSettings();
+    var svg = document.getElementById('preview-svg');
+    var pageW = ctx.pageW, pageH = ctx.pageH;
+    svg.setAttribute('viewBox', '0 0 ' + pageW + ' ' + pageH);
+    svg.setAttribute('width', '220');
+    svg.setAttribute('height', String(Math.round(220 * (pageH/pageW))));
+
+    var parts = [];
+    parts.push('<rect x="0" y="0" width="'+pageW+'" height="'+pageH+'" fill="#ffffff" stroke="#D9D3C1" stroke-width="2"/>');
+
+    function toSvgY(pdfY, h){ return pageH - pdfY - h; }
+    function rgbToCss(c){ return 'rgb(' + Math.round(c.red*255) + ',' + Math.round(c.green*255) + ',' + Math.round(c.blue*255) + ')'; }
+    var fgCss = rgbToCss(settings.fg);
+    var bgCss = rgbToCss(settings.bg);
+
+    function approxTextWidth(text, size){ return text.length * size * 0.52; }
+
+    function placeTextBox(text, size, position){
+      var w = approxTextWidth(text, size), h = size * 1.15;
+      var pos = getXY(position, pageW, pageH, w, h, settings.margin);
+      var svgY = toSvgY(pos.y, h) ;
+      if(settings.bgEnabled){
+        parts.push('<rect x="'+(pos.x-4)+'" y="'+(svgY-4)+'" width="'+(w+8)+'" height="'+(h+8)+'" fill="'+bgCss+'" opacity="'+settings.bgOpacity+'" rx="2"/>');
+      }
+      parts.push('<text x="'+pos.x+'" y="'+(svgY+h*0.82)+'" font-size="'+size+'" font-family="monospace" fill="'+fgCss+'">'+escapeHtml(text)+'</text>');
+    }
+
+    if(settings.filename.enabled){
+      var fnText = settings.filename.keepExt ? ctx.filename : ctx.filename.replace(/\.pdf$/i,'');
+      placeTextBox(fnText, settings.filename.size, settings.filename.position);
+    }
+    if(settings.pageNumber.enabled){
+      var pnText = settings.pageNumber.template.replace(/\{n\}/g,'1').replace(/\{total\}/g, String(ctx.totalPages));
+      placeTextBox(pnText, settings.pageNumber.size, settings.pageNumber.position);
+    }
+    if(settings.dateStamp.enabled){
+      var dText = settings.dateStamp.template.replace(/\{date\}/g, formatDate(new Date(), settings.dateStamp.format));
+      placeTextBox(dText, settings.dateStamp.size, settings.dateStamp.position);
+    }
+    if(settings.logo.enabled){
+      var logoW = pageW * (settings.logo.scalePct/100);
+      var logoH = logoW * 0.5;
+      var lpos = getXY(settings.logo.position, pageW, pageH, logoW, logoH, settings.margin);
+      var lsvgY = toSvgY(lpos.y, logoH);
+      if(settings.bgEnabled){
+        parts.push('<rect x="'+(lpos.x-5)+'" y="'+(lsvgY-5)+'" width="'+(logoW+10)+'" height="'+(logoH+10)+'" fill="'+bgCss+'" opacity="'+settings.bgOpacity+'" rx="2"/>');
+      }
+      if(settings.logo.dataUrl){
+        parts.push('<image x="'+lpos.x+'" y="'+lsvgY+'" width="'+logoW+'" height="'+logoH+'" href="'+settings.logo.dataUrl+'" preserveAspectRatio="xMidYMid meet"/>');
+      } else {
+        parts.push('<rect x="'+lpos.x+'" y="'+lsvgY+'" width="'+logoW+'" height="'+logoH+'" fill="none" stroke="#B23A2E" stroke-dasharray="4 3"/>');
+        parts.push('<text x="'+(lpos.x+logoW/2)+'" y="'+(lsvgY+logoH/2+3)+'" font-size="9" font-family="monospace" fill="#B23A2E" text-anchor="middle">LOGO</text>');
+      }
+    }
+    if(settings.watermark.enabled && settings.watermark.text){
+      var wmCss = rgbToCss(settings.watermark.color);
+      var cx = pageW/2, cySvg = pageH/2;
+      parts.push('<text x="'+cx+'" y="'+cySvg+'" font-size="'+settings.watermark.size+'" font-family="monospace" font-weight="bold" fill="'+wmCss+'" opacity="'+settings.watermark.opacity+'" text-anchor="middle" dominant-baseline="middle" transform="rotate('+(-settings.watermark.rotate)+' '+cx+' '+cySvg+')">'+escapeHtml(settings.watermark.text)+'</text>');
+    }
+
+    svg.innerHTML = parts.join('');
+    document.getElementById('preview-caption').textContent = ctx.isPlaceholder
+      ? 'Showing a placeholder page — select a file to preview it'
+      : ctx.filename + ' (' + ctx.totalPages + ' page' + (ctx.totalPages===1?'':'s') + ')';
+  }
+
+  /* ================= presets (save/load settings as JSON) ================= */
+  var PRESET_IDS = [
+    'fn-enable','fn-size','fn-font','fn-keep-ext',
+    'logo-enable','logo-scale',
+    'pn-enable','pn-template','pn-size',
+    'date-enable','date-template','date-format','date-size',
+    'wm-enable','wm-text','wm-size','wm-rotate','wm-opacity','wm-color',
+    'fg-color','bg-enable','bg-color','bg-opacity','margin',
+    'pw-enable','skip-stamped'
+  ];
+  var PRESET_GRIDS = ['grid-filename','grid-logo','grid-pagenum','grid-date'];
+
+  document.getElementById('preset-save').addEventListener('click', function(){
+    var out = {};
+    PRESET_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el) return;
+      out[id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    PRESET_GRIDS.forEach(function(id){ out[id] = document.getElementById(id).dataset.selected; });
+    var blob = new Blob([JSON.stringify(out, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'pdf-stamp-toolkit-settings.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  });
+
+  document.getElementById('preset-load-btn').addEventListener('click', function(){
+    document.getElementById('preset-load').click();
+  });
+  document.getElementById('preset-load').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var data = JSON.parse(reader.result);
+        PRESET_IDS.forEach(function(id){
+          if(!(id in data)) return;
+          var el = document.getElementById(id);
+          if(!el) return;
+          if(el.type === 'checkbox') el.checked = !!data[id];
+          else el.value = data[id];
+          el.dispatchEvent(new Event('change'));
+        });
+        PRESET_GRIDS.forEach(function(id){
+          if(!(id in data)) return;
+          var grid = document.getElementById(id);
+          grid.dataset.selected = data[id];
+          grid.querySelectorAll('.pos-btn').forEach(function(b){
+            b.classList.toggle('active', b.dataset.pos === data[id]);
+          });
+        });
+        document.getElementById('logo-scale-val').textContent = document.getElementById('logo-scale').value;
+        document.getElementById('bg-opacity-val').textContent = document.getElementById('bg-opacity').value;
+        document.getElementById('wm-opacity-val').textContent = document.getElementById('wm-opacity').value;
+        ['fn-enable','logo-enable','pn-enable','date-enable','wm-enable'].forEach(function(id){
+          document.getElementById(id).dispatchEvent(new Event('change'));
+        });
+        renderPreview();
+      }catch(err){
+        alert('Could not read that settings file: ' + err.message);
+      }
+    };
+    reader.readAsText(f);
+    e.target.value = '';
+  });
+
+  /* ================= dry-run / folder report ================= */
+  async function buildFolderReport(files, containerEl){
+    containerEl.innerHTML = '<div class="hint">Reading ' + files.length + ' file(s)…</div>';
+    var rows = [];
+    for(var i=0;i<files.length;i++){
+      var f = files[i];
+      try{
+        var bytes = await readFileAsArrayBuffer(f);
+        var doc = await PDFLibRef.PDFDocument.load(bytes, {updateMetadata:false});
+        var stamped = isAlreadyStamped(doc);
+        var hasFonts = await hasFontResources(doc);
+        rows.push({
+          name: f.name, pages: doc.getPageCount(), size: fmtBytes(f.size),
+          stamped: stamped, maybeScanned: !hasFonts
+        });
+      }catch(err){
+        rows.push({ name: f.name, pages: '—', size: fmtBytes(f.size), error: err.message || String(err) });
+      }
+      await yieldToUI();
+    }
+    var html = '<table class="dry-run-table"><thead><tr><th>File</th><th>Pages</th><th>Size</th><th>Notes</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var notes = [];
+      if(r.error) notes.push('<span class="tag tag-warn">read error</span>');
+      if(r.stamped) notes.push('<span class="tag tag-warn">already stamped</span>');
+      if(r.maybeScanned) notes.push('<span class="tag tag-warn">no text layer</span>');
+      html += '<tr><td>'+escapeHtml(r.name)+'</td><td>'+r.pages+'</td><td>'+r.size+'</td><td>'+(notes.join(' ')||'<span class="tag tag-ok">ok</span>')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+    containerEl.innerHTML = html;
+  }
+
+  /* ================= TAB 1: SINGLE FILE ================= */
+  (function(){
+    var dz = document.getElementById('dz-single');
+    var input = document.getElementById('single-file');
+    var listEl = document.getElementById('single-file-list');
+    var processBtn = document.getElementById('single-process');
+    var resetBtn = document.getElementById('single-reset');
+    var progressWrap = document.getElementById('single-progress');
+    var resultsEl = document.getElementById('single-results');
+    var currentFile = null;
+
+    dz.addEventListener('click', function(){ input.click(); });
+    dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+    dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+    dz.addEventListener('drop', function(e){
+      e.preventDefault(); dz.classList.remove('drag');
+      if(e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', function(){ if(input.files[0]) setFile(input.files[0]); });
+
+    function setFile(f){
+      if(!/\.pdf$/i.test(f.name)){ alert('Please choose a PDF file.'); return; }
+      currentFile = f;
+      listEl.style.display = 'block';
+      listEl.innerHTML = '<div class="file-row"><span class="fname">'+escapeHtml(f.name)+'</span><span class="fsize">'+fmtBytes(f.size)+'</span></div>';
+      processBtn.disabled = false;
+      resultsEl.innerHTML = '';
+      setPreviewFile(f);
+    }
+
+    resetBtn.addEventListener('click', function(){
+      currentFile = null; input.value = '';
+      listEl.style.display = 'none'; listEl.innerHTML='';
+      processBtn.disabled = true; resultsEl.innerHTML = '';
+      progressWrap.classList.remove('show');
+    });
+
+    processBtn.addEventListener('click', async function(){
+      if(!currentFile) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      progressWrap.querySelector('div > div').style.width = '25%';
+      resultsEl.innerHTML = '';
+      try{
+        var settings = readSettings();
+        var bytes = await readFileAsArrayBuffer(currentFile);
+        var pdfDoc = await PDFLibRef.PDFDocument.load(bytes);
+
+        if(settings.skipStamped && isAlreadyStamped(pdfDoc)){
+          progressWrap.classList.remove('show');
+          resultsEl.innerHTML = '<div class="result-row skip-row"><span class="rname">Skipped — already stamped by this tool: '+escapeHtml(currentFile.name)+'</span></div>';
+          processBtn.disabled = false;
+          return;
+        }
+
+        var embeddedLogo = null;
+        if(settings.logo.enabled && settings.logo.bytes){
+          embeddedLogo = await pdfDoc.embedPng(settings.logo.bytes);
+        }
+        var fname = currentFile.name;
+        await stampDocument(pdfDoc, settings, function(){ return fname; }, null, embeddedLogo);
+        progressWrap.querySelector('div > div').style.width = '80%';
+        var outBytes = await finalizeBytes(pdfDoc, settings);
+        progressWrap.querySelector('div > div').style.width = '100%';
+        var outName = 'stamped-' + fname;
+        resultsEl.innerHTML = '';
+        var row = document.createElement('div');
+        row.className = 'result-row';
+        row.innerHTML = '<span class="result-badge">✓ stamped</span><span class="rname">'+escapeHtml(outName)+'</span>';
+        var a = document.createElement('a');
+        a.className = 'dl'; a.textContent = 'Download';
+        a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+        a.download = outName;
+        row.appendChild(a);
+        resultsEl.appendChild(row);
+      }catch(err){
+        console.error(err);
+        resultsEl.innerHTML = '<div class="result-row error-row"><span class="rname">Failed: '+escapeHtml(err.message||String(err))+'</span></div>';
+      }finally{
+        processBtn.disabled = false;
+        setTimeout(function(){ progressWrap.classList.remove('show'); }, 500);
+      }
+    });
+  })();
+
+  /* ================= TAB 2: BATCH FOLDER ================= */
+  (function(){
+    var input = document.getElementById('batch-files');
+    var dz = document.getElementById('dz-batch');
+    var toolbar = document.getElementById('batch-toolbar');
+    var sortSel = document.getElementById('batch-sort');
+    var dryRunBtn = document.getElementById('batch-dry-run');
+    var dryRunResults = document.getElementById('batch-dry-run-results');
+    var listEl = document.getElementById('batch-file-list');
+    var processBtn = document.getElementById('batch-process');
+    var resetBtn = document.getElementById('batch-reset');
+    var progressWrap = document.getElementById('batch-progress');
+    var resultsEl = document.getElementById('batch-results');
+    var downloadRow = document.getElementById('batch-download-row');
+    var zipBtn = document.getElementById('batch-zip');
+    var files = [];
+    var lastResults = [];
+
+    dz.addEventListener('click', function(){ input.click(); });
+    input.addEventListener('change', function(){
+      files = pdfFilesFromFileList(input.files);
+      dryRunResults.innerHTML = '';
+      renderList();
+      if(files[0]) setPreviewFile(files[0]);
+    });
+
+    function applySort(){
+      var mode = sortSel.value;
+      files.sort(function(a,b){
+        if(mode === 'name-asc') return a.name.localeCompare(b.name);
+        if(mode === 'name-desc') return b.name.localeCompare(a.name);
+        if(mode === 'date-asc') return a.lastModified - b.lastModified;
+        if(mode === 'date-desc') return b.lastModified - a.lastModified;
+        return 0;
+      });
+      renderList();
+    }
+    sortSel.addEventListener('change', applySort);
+    dryRunBtn.addEventListener('click', function(){ buildFolderReport(files, dryRunResults); });
+
+    function renderList(){
+      if(files.length === 0){ listEl.style.display='none'; toolbar.style.display='none'; processBtn.disabled = true; return; }
+      listEl.style.display = 'block';
+      toolbar.style.display = 'flex';
+      listEl.innerHTML = files.map(function(f, idx){
+        return '<div class="file-row">'+
+          '<div class="order-btns">'+
+            '<button type="button" data-up="'+idx+'" '+(idx===0?'disabled':'')+'>▲</button>'+
+            '<button type="button" data-down="'+idx+'" '+(idx===files.length-1?'disabled':'')+'>▼</button>'+
+          '</div>'+
+          '<span class="fname">'+escapeHtml(f.name)+'</span>'+
+          '<span class="fsize">'+fmtBytes(f.size)+'</span>'+
+        '</div>';
+      }).join('');
+      processBtn.disabled = false;
+    }
+
+    listEl.addEventListener('click', function(e){
+      var up = e.target.getAttribute('data-up');
+      var down = e.target.getAttribute('data-down');
+      if(up !== null){ var i=parseInt(up,10); if(i>0){ var t=files[i-1]; files[i-1]=files[i]; files[i]=t; renderList(); } }
+      else if(down !== null){ var j=parseInt(down,10); if(j<files.length-1){ var t2=files[j+1]; files[j+1]=files[j]; files[j]=t2; renderList(); } }
+    });
+
+    resetBtn.addEventListener('click', function(){
+      files = []; input.value=''; lastResults = [];
+      listEl.style.display='none'; listEl.innerHTML=''; toolbar.style.display='none';
+      dryRunResults.innerHTML = '';
+      processBtn.disabled = true; resultsEl.innerHTML='';
+      downloadRow.style.display = 'none';
+      progressWrap.classList.remove('show');
+    });
+
+    processBtn.addEventListener('click', async function(){
+      if(files.length === 0) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      resultsEl.innerHTML = '';
+      downloadRow.style.display = 'none';
+      lastResults = [];
+      var settings = readSettings();
+      var bar = progressWrap.querySelector('div > div');
+      var label = progressWrap.querySelector('.progress-label');
+
+      for(var i=0;i<files.length;i++){
+        var f = files[i];
+        label.textContent = 'Processing ' + (i+1) + ' of ' + files.length + ': ' + f.name;
+        bar.style.width = Math.round(((i)/files.length)*100) + '%';
+        var row = document.createElement('div');
+        row.className = 'result-row';
+        resultsEl.appendChild(row);
+        try{
+          var bytes = await readFileAsArrayBuffer(f);
+          var pdfDoc = await PDFLibRef.PDFDocument.load(bytes);
+
+          if(settings.skipStamped && isAlreadyStamped(pdfDoc)){
+            row.className = 'result-row skip-row';
+            row.innerHTML = '<span class="rname">Skipped — already stamped: '+escapeHtml(f.name)+'</span>';
+            await yieldToUI();
+            continue;
+          }
+
+          var embeddedLogo = null;
+          if(settings.logo.enabled && settings.logo.bytes){
+            embeddedLogo = await pdfDoc.embedPng(settings.logo.bytes);
+          }
+          await stampDocument(pdfDoc, settings, function(){ return f.name; }, null, embeddedLogo);
+          var outBytes = await finalizeBytes(pdfDoc, settings);
+          var outName = 'stamped-' + f.name;
+          lastResults.push({name: outName, bytes: outBytes});
+          row.innerHTML = '<span class="result-badge">✓ stamped</span><span class="rname">'+escapeHtml(outName)+'</span>';
+          var a = document.createElement('a');
+          a.className='dl'; a.textContent='Download';
+          a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+          a.download = outName;
+          row.appendChild(a);
+        }catch(err){
+          console.error(err);
+          row.classList.add('error-row');
+          row.innerHTML = '<span class="rname">Failed — '+escapeHtml(f.name)+': '+escapeHtml(err.message||String(err))+'</span>';
+        }
+        await yieldToUI();
+      }
+      bar.style.width = '100%';
+      processBtn.disabled = false;
+      if(lastResults.length){ downloadRow.style.display = 'flex'; }
+      setTimeout(function(){ progressWrap.classList.remove('show'); }, 600);
+    });
+
+    zipBtn.addEventListener('click', async function(){
+      if(!lastResults.length) return;
+      zipBtn.disabled = true; zipBtn.textContent = 'Zipping…';
+      try{
+        var zip = new JSZip();
+        lastResults.forEach(function(r){ zip.file(r.name, r.bytes); });
+        var blob = await zip.generateAsync({type:'blob'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'stamped-pdfs.zip';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      }finally{
+        zipBtn.disabled = false; zipBtn.textContent = 'Download all as ZIP';
+      }
+    });
+  })();
+
+  /* ================= TAB 3: MERGE FOLDER ================= */
+  (function(){
+    var input = document.getElementById('merge-files');
+    var dz = document.getElementById('dz-merge');
+    var toolbar = document.getElementById('merge-toolbar');
+    var dryRunBtn = document.getElementById('merge-dry-run');
+    var dryRunResults = document.getElementById('merge-dry-run-results');
+    var bookmarksCb = document.getElementById('merge-bookmarks');
+    var listEl = document.getElementById('merge-file-list');
+    var processBtn = document.getElementById('merge-process');
+    var resetBtn = document.getElementById('merge-reset');
+    var progressWrap = document.getElementById('merge-progress');
+    var resultsEl = document.getElementById('merge-results');
+    var files = [];
+
+    dz.addEventListener('click', function(){ input.click(); });
+    input.addEventListener('change', function(){
+      files = pdfFilesFromFileList(input.files);
+      dryRunResults.innerHTML = '';
+      renderList();
+      if(files[0]) setPreviewFile(files[0]);
+    });
+
+    dryRunBtn.addEventListener('click', function(){ buildFolderReport(files, dryRunResults); });
+
+    function renderList(){
+      if(files.length === 0){ listEl.style.display='none'; toolbar.style.display='none'; processBtn.disabled = true; return; }
+      listEl.style.display = 'block';
+      toolbar.style.display = 'flex';
+      processBtn.disabled = false;
+      draw();
+    }
+
+    function draw(){
+      listEl.innerHTML = files.map(function(f, idx){
+        return '<div class="file-row">'+
+          '<div class="order-btns">'+
+            '<button type="button" data-up="'+idx+'" '+(idx===0?'disabled':'')+'>▲</button>'+
+            '<button type="button" data-down="'+idx+'" '+(idx===files.length-1?'disabled':'')+'>▼</button>'+
+          '</div>'+
+          '<span class="fname">'+escapeHtml(f.name)+'</span>'+
+          '<span class="fsize">'+fmtBytes(f.size)+'</span>'+
+          '<button type="button" class="remove-btn" data-remove="'+idx+'" aria-label="Remove">✕</button>'+
+        '</div>';
+      }).join('');
+    }
+
+    listEl.addEventListener('click', function(e){
+      var up = e.target.getAttribute('data-up');
+      var down = e.target.getAttribute('data-down');
+      var rem = e.target.getAttribute('data-remove');
+      if(up !== null){ var i=parseInt(up,10); if(i>0){ var t=files[i-1]; files[i-1]=files[i]; files[i]=t; draw(); } }
+      else if(down !== null){ var j=parseInt(down,10); if(j<files.length-1){ var t2=files[j+1]; files[j+1]=files[j]; files[j]=t2; draw(); } }
+      else if(rem !== null){
+        files.splice(parseInt(rem,10),1);
+        if(files.length===0){ listEl.style.display='none'; processBtn.disabled=true; }
+        draw();
+      }
+    });
+
+    resetBtn.addEventListener('click', function(){
+      files = []; input.value='';
+      listEl.style.display='none'; listEl.innerHTML=''; toolbar.style.display='none';
+      dryRunResults.innerHTML='';
+      processBtn.disabled = true; resultsEl.innerHTML='';
+      progressWrap.classList.remove('show');
+    });
+
+    processBtn.addEventListener('click', async function(){
+      if(files.length === 0) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      resultsEl.innerHTML = '';
+      var bar = progressWrap.querySelector('div > div');
+      var label = progressWrap.querySelector('.progress-label');
+      var settings = readSettings();
+
+      try{
+        var mergedDoc = await PDFLibRef.PDFDocument.create();
+        var pageFilenameMap = [];
+        var bookmarkEntries = [];
+        var failedFiles = [];
+
+        for(var i=0;i<files.length;i++){
+          var f = files[i];
+          label.textContent = 'Copying ' + (i+1) + ' of ' + files.length + ': ' + f.name;
+          bar.style.width = Math.round(((i)/files.length)*65) + '%';
+          try{
+            var bytes = await readFileAsArrayBuffer(f);
+            var srcDoc = await PDFLibRef.PDFDocument.load(bytes);
+            var indices = srcDoc.getPageIndices();
+            var startIdx = mergedDoc.getPageCount();
+            var copied = await mergedDoc.copyPages(srcDoc, indices);
+            copied.forEach(function(p){ mergedDoc.addPage(p); pageFilenameMap.push(f.name); });
+            if(bookmarksCb.checked){ bookmarkEntries.push({ title: f.name, pageIndex: startIdx }); }
+          }catch(err){
+            console.error(err);
+            failedFiles.push(f.name);
+          }
+          await yieldToUI();
+        }
+
+        label.textContent = 'Stamping merged document…';
+        bar.style.width = '75%';
+
+        var embeddedLogo = null;
+        if(settings.logo.enabled && settings.logo.bytes){
+          embeddedLogo = await mergedDoc.embedPng(settings.logo.bytes);
+        }
+        var total = mergedDoc.getPageCount();
+        await stampDocument(mergedDoc, settings, function(pageIdx){ return pageFilenameMap[pageIdx]; }, total, embeddedLogo);
+
+        if(bookmarkEntries.length){
+          addBookmarks(mergedDoc, bookmarkEntries);
+        }
+
+        bar.style.width = '90%';
+        var outBytes = await finalizeBytes(mergedDoc, settings);
+        bar.style.width = '100%';
+
+        var outName = 'merged-stamped.pdf';
+        resultsEl.innerHTML = '';
+        var row = document.createElement('div');
+        row.className = 'result-row';
+        row.innerHTML = '<span class="result-badge">✓ merged</span><span class="rname">'+escapeHtml(outName)+' — '+total+' pages</span>';
+        var a = document.createElement('a');
+        a.className='dl'; a.textContent='Download';
+        a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+        a.download = outName;
+        row.appendChild(a);
+        resultsEl.appendChild(row);
+
+        if(failedFiles.length){
+          var errRow = document.createElement('div');
+          errRow.className = 'result-row error-row';
+          errRow.innerHTML = '<span class="rname">Skipped (could not read): '+escapeHtml(failedFiles.join(', '))+'</span>';
+          resultsEl.appendChild(errRow);
+        }
+      }catch(err){
+        console.error(err);
+        resultsEl.innerHTML = '<div class="result-row error-row"><span class="rname">Merge failed: '+escapeHtml(err.message||String(err))+'</span></div>';
+      }finally{
+        processBtn.disabled = false;
+        setTimeout(function(){ progressWrap.classList.remove('show'); }, 600);
+      }
+    });
+  })();
+
+  /* ================= TAB 4: SPLIT FILE ================= */
+  (function(){
+    var dz = document.getElementById('dz-split');
+    var input = document.getElementById('split-file');
+    var listEl = document.getElementById('split-file-list');
+    var processBtn = document.getElementById('split-process');
+    var resetBtn = document.getElementById('split-reset');
+    var progressWrap = document.getElementById('split-progress');
+    var resultsEl = document.getElementById('split-results');
+    var downloadRow = document.getElementById('split-download-row');
+    var zipBtn = document.getElementById('split-zip');
+    var applyStampsCb = document.getElementById('split-apply-stamps');
+    var nInput = document.getElementById('split-n');
+    var currentFile = null;
+    var lastResults = [];
+
+    dz.addEventListener('click', function(){ input.click(); });
+    dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+    dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+    dz.addEventListener('drop', function(e){
+      e.preventDefault(); dz.classList.remove('drag');
+      if(e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', function(){ if(input.files[0]) setFile(input.files[0]); });
+
+    function setFile(f){
+      if(!/\.pdf$/i.test(f.name)){ alert('Please choose a PDF file.'); return; }
+      currentFile = f;
+      listEl.style.display = 'block';
+      listEl.innerHTML = '<div class="file-row"><span class="fname">'+escapeHtml(f.name)+'</span><span class="fsize">'+fmtBytes(f.size)+'</span></div>';
+      processBtn.disabled = false;
+      resultsEl.innerHTML = '';
+      downloadRow.style.display = 'none';
+      setPreviewFile(f);
+    }
+
+    resetBtn.addEventListener('click', function(){
+      currentFile = null; input.value = ''; lastResults = [];
+      listEl.style.display = 'none'; listEl.innerHTML='';
+      processBtn.disabled = true; resultsEl.innerHTML = '';
+      downloadRow.style.display = 'none';
+      progressWrap.classList.remove('show');
+    });
+
+    function chunkRanges(totalPages, mode, n){
+      var ranges = [];
+      if(mode === 'single'){
+        for(var i=0;i<totalPages;i++) ranges.push([i,i]);
+      } else {
+        for(var start=0; start<totalPages; start+=n){
+          ranges.push([start, Math.min(start+n-1, totalPages-1)]);
+        }
+      }
+      return ranges;
+    }
+
+    processBtn.addEventListener('click', async function(){
+      if(!currentFile) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      resultsEl.innerHTML = '';
+      downloadRow.style.display = 'none';
+      lastResults = [];
+      var bar = progressWrap.querySelector('div > div');
+      var label = progressWrap.querySelector('.progress-label');
+      var settings = readSettings();
+      var mode = document.querySelector('input[name="split-mode"]:checked').value;
+      var n = Math.max(1, parseInt(nInput.value,10) || 1);
+
+      try{
+        var srcBytes = await readFileAsArrayBuffer(currentFile);
+        var srcDoc = await PDFLibRef.PDFDocument.load(srcBytes);
+        var totalOriginal = srcDoc.getPageCount();
+        var ranges = chunkRanges(totalOriginal, mode, n);
+        var baseName = currentFile.name.replace(/\.pdf$/i,'');
+
+        var embeddedLogoBytes = (applyStampsCb.checked && settings.logo.enabled) ? settings.logo.bytes : null;
+
+        for(var i=0;i<ranges.length;i++){
+          var range = ranges[i];
+          label.textContent = 'Splitting ' + (i+1) + ' of ' + ranges.length;
+          bar.style.width = Math.round((i/ranges.length)*100) + '%';
+          var row = document.createElement('div');
+          row.className = 'result-row';
+          resultsEl.appendChild(row);
+          try{
+            var outDoc = await PDFLibRef.PDFDocument.create();
+            var idxList = [];
+            for(var p=range[0]; p<=range[1]; p++) idxList.push(p);
+            var copiedPages = await outDoc.copyPages(srcDoc, idxList);
+            copiedPages.forEach(function(cp){ outDoc.addPage(cp); });
+
+            var suffix = (range[0]===range[1]) ? ('p' + String(range[0]+1).padStart(3,'0')) : ('p' + String(range[0]+1).padStart(3,'0') + '-' + String(range[1]+1).padStart(3,'0'));
+            var outName = baseName + '-' + suffix + '.pdf';
+
+            if(applyStampsCb.checked){
+              var embeddedLogo = null;
+              if(embeddedLogoBytes){ embeddedLogo = await outDoc.embedPng(embeddedLogoBytes); }
+              await stampDocument(outDoc, settings, function(){ return currentFile.name; }, totalOriginal, embeddedLogo);
+            }
+
+            var outBytes = await finalizeBytes(outDoc, settings);
+            lastResults.push({name: outName, bytes: outBytes});
+            row.innerHTML = '<span class="result-badge">✓ split</span><span class="rname">'+escapeHtml(outName)+'</span>';
+            var a = document.createElement('a');
+            a.className='dl'; a.textContent='Download';
+            a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+            a.download = outName;
+            row.appendChild(a);
+          }catch(err){
+            console.error(err);
+            row.classList.add('error-row');
+            row.innerHTML = '<span class="rname">Failed on piece '+(i+1)+': '+escapeHtml(err.message||String(err))+'</span>';
+          }
+          await yieldToUI();
+        }
+        bar.style.width = '100%';
+        if(lastResults.length){ downloadRow.style.display = 'flex'; }
+      }catch(err){
+        console.error(err);
+        resultsEl.innerHTML = '<div class="result-row error-row"><span class="rname">Split failed: '+escapeHtml(err.message||String(err))+'</span></div>';
+      }finally{
+        processBtn.disabled = false;
+        setTimeout(function(){ progressWrap.classList.remove('show'); }, 600);
+      }
+    });
+
+    zipBtn.addEventListener('click', async function(){
+      if(!lastResults.length) return;
+      zipBtn.disabled = true; zipBtn.textContent = 'Zipping…';
+      try{
+        var zip = new JSZip();
+        lastResults.forEach(function(r){ zip.file(r.name, r.bytes); });
+        var blob = await zip.generateAsync({type:'blob'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'split-pdfs.zip';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      }finally{
+        zipBtn.disabled = false; zipBtn.textContent = 'Download all as ZIP';
+      }
+    });
+  })();
+
+  renderPreview();
+
+})();
+</script>
+</body>
+</html>
