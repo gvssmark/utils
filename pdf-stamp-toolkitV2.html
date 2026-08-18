@@ -521,6 +521,15 @@ main{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
 
   var STAMPED_MARKER = 'pdf-stamp-toolkit:stamped';
 
+  // These must be assigned before anything below can run — several setup
+  // steps (position-switch init, etc.) call renderPreview() immediately,
+  // and renderPreview()/readSettings() depend on rgbFn/PDFLibRef being real
+  // values, not just hoisted-but-undefined `var` declarations.
+  var PDFLibRef = window.PDFLib;
+  var StandardFonts = PDFLibRef.StandardFonts;
+  var rgbFn = PDFLibRef.rgb;
+  var degreesFn = PDFLibRef.degrees;
+
   /* ================= tabs ================= */
   document.querySelectorAll('.tab-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
@@ -567,11 +576,6 @@ main{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
   });
 
   /* ================= shared helpers ================= */
-  var PDFLibRef = window.PDFLib;
-  var StandardFonts = PDFLibRef.StandardFonts;
-  var rgbFn = PDFLibRef.rgb;
-  var degreesFn = PDFLibRef.degrees;
-
   function hexToRgb01(hex){
     hex = hex.replace('#','');
     var r = parseInt(hex.substring(0,2),16)/255;
