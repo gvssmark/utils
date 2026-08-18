@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Stamp Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2EFE6;
+  --paper-card:#FBFAF5;
+  --paper-card-2:#F6F4EC;
+  --ink:#1E2A38;
+  --ink-soft:#5B6472;
+  --ink-faint:#8B93A0;
+  --line:#D9D3C1;
+  --line-strong:#C3BCA6;
+  --stamp:#B23A2E;
+  --stamp-soft:rgba(178,58,46,0.08);
+  --stamp-soft-2:rgba(178,58,46,0.16);
+  --teal:#2F6F62;
+  --teal-soft:rgba(47,111,98,0.10);
+  --shadow:0 1px 2px rgba(30,42,56,0.06), 0 6px 16px rgba(30,42,56,0.06);
+  --radius:3px;
+  --font-display:'Special Elite', 'Courier New', monospace;
+  --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  background-image:
+    radial-gradient(rgba(30,42,56,0.035) 1px, transparent 1px);
+  background-size:22px 22px;
+  color:var(--ink);
+  font-family:var(--font-body);
+  line-height:1.45;
+  min-height:100vh;
+}
+::selection{background:var(--stamp-soft-2);}
+:focus-visible{outline:2px solid var(--stamp); outline-offset:2px;}
+button{font-family:inherit;}
+
+.app{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+
+/* ---------- header ---------- */
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;padding-bottom:20px;border-bottom:1px dashed var(--line-strong);}
+.brand{display:flex;align-items:center;gap:16px;}
+.stamp-badge{
+  font-family:var(--font-display);
+  font-size:13px;
+  letter-spacing:1.5px;
+  color:var(--stamp);
+  border:2px solid var(--stamp);
+  border-radius:50%;
+  width:74px;height:74px;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;
+  transform:rotate(-8deg);
+  position:relative;
+  flex-shrink:0;
+  line-height:1.15;
+}
+.stamp-badge::before{
+  content:"";position:absolute;inset:5px;border:1px dashed var(--stamp);border-radius:50%;opacity:0.55;
+}
+.brand h1{font-family:var(--font-display);font-size:26px;margin:0 0 2px;letter-spacing:0.5px;font-weight:400;}
+.brand p{margin:0;color:var(--ink-soft);font-size:13.5px;}
+.privacy-note{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--teal);
+  background:var(--teal-soft);border:1px solid rgba(47,111,98,0.25);
+  padding:7px 12px;border-radius:var(--radius);white-space:nowrap;
+}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
+.tab-btn{
+  background:var(--paper-card-2);
+  border:1px solid var(--line);
+  border-bottom:3px solid transparent;
+  padding:11px 18px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  color:var(--ink-soft);
+  border-radius:var(--radius) var(--radius) 0 0;
+  display:flex;align-items:center;gap:9px;
+  transition:color .15s ease, border-color .15s ease, background .15s ease;
+}
+.tab-btn .num{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);border:1px solid var(--line-strong);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.tab-btn.active{color:var(--ink);background:var(--paper-card);border-color:var(--line);border-bottom-color:var(--stamp);}
+.tab-btn.active .num{border-color:var(--stamp);color:var(--stamp);}
+.tab-btn:hover:not(.active){color:var(--ink);}
+
+/* ---------- layout ---------- */
+main{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+@media (max-width:880px){ main{grid-template-columns:1fr;} }
+
+.panel{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+}
+.panel + .panel{margin-top:20px;}
+.panel h2{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:0 0 16px;
+  display:flex;align-items:center;gap:10px;
+}
+.panel h2::after{content:"";flex:1;border-top:1px dashed var(--line-strong);}
+
+/* ---------- settings groups ---------- */
+.stamp-group{border:1px solid var(--line);border-radius:var(--radius);padding:14px 14px 16px;margin-bottom:14px;background:var(--paper-card-2);}
+.stamp-group:last-child{margin-bottom:0;}
+.stamp-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.stamp-group-head label.switch-label{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:9px;cursor:pointer;}
+.stamp-group[data-off="true"] .stamp-group-body{opacity:0.35;pointer-events:none;}
+
+.switch{position:relative;width:34px;height:19px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;position:absolute;}
+.switch .track{position:absolute;inset:0;background:var(--line-strong);border-radius:20px;transition:background .15s;}
+.switch .track::after{content:"";position:absolute;width:14px;height:14px;left:2.5px;top:2.5px;background:#fff;border-radius:50%;transition:transform .15s;}
+.switch input:checked + .track{background:var(--stamp);}
+.switch input:checked + .track::after{transform:translateX(15px);}
+
+.field{margin-bottom:11px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;letter-spacing:0.2px;}
+.field input[type=text], .field input[type=number], .field select{
+  width:100%;padding:7px 9px;border:1px solid var(--line-strong);border-radius:var(--radius);
+  background:#fff;font-family:var(--font-mono);font-size:12.5px;color:var(--ink);
+}
+.field input[type=file]{width:100%;font-size:12px;font-family:var(--font-body);}
+.hint{font-size:10.5px;color:var(--ink-faint);margin-top:4px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.checkbox-line{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);margin-top:6px;}
+.checkbox-line input{margin:0;}
+
+/* position grid */
+.pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px;}
+.pos-btn{
+  border:1px solid var(--line-strong);background:#fff;border-radius:var(--radius);
+  padding:7px 3px;font-size:9.5px;font-family:var(--font-mono);letter-spacing:0.2px;
+  color:var(--ink-soft);cursor:pointer;text-align:center;text-transform:uppercase;
+}
+.pos-btn:hover{border-color:var(--stamp);color:var(--stamp);}
+.pos-btn.active{background:var(--stamp-soft);border-color:var(--stamp);color:var(--stamp);font-weight:600;}
+
+.color-row{display:flex;align-items:center;gap:10px;}
+.color-row input[type=color]{width:38px;height:30px;border:1px solid var(--line-strong);border-radius:var(--radius);padding:2px;background:#fff;cursor:pointer;}
+.color-row .swatch-label{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);flex:1;}
+
+/* ---------- workspace ---------- */
+.dropzone{
+  border:2px dashed var(--line-strong);border-radius:var(--radius);
+  padding:34px 20px;text-align:center;background:var(--paper-card-2);
+  cursor:pointer;transition:border-color .15s, background .15s;
+}
+.dropzone.drag{border-color:var(--stamp);background:var(--stamp-soft);}
+.dropzone svg{margin-bottom:8px;color:var(--ink-faint);}
+.dropzone .dz-title{font-weight:600;font-size:14px;margin-bottom:3px;}
+.dropzone .dz-sub{font-size:12px;color:var(--ink-soft);}
+.dropzone input{display:none;}
+
+.file-list{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.file-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--paper-card);font-size:13px;}
+.file-row:last-child{border-bottom:none;}
+.file-row .fname{flex:1;font-family:var(--font-mono);font-size:12px;word-break:break-all;}
+.file-row .fsize{color:var(--ink-faint);font-size:11px;font-family:var(--font-mono);}
+.file-row .order-btns{display:flex;flex-direction:column;gap:2px;}
+.file-row .order-btns button{border:1px solid var(--line-strong);background:#fff;border-radius:2px;width:18px;height:16px;font-size:9px;line-height:1;cursor:pointer;padding:0;}
+.file-row .remove-btn{border:none;background:none;color:var(--stamp);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;}
+.status-pill{font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:10px;background:var(--line);color:var(--ink-soft);}
+.status-pill.ok{background:var(--teal-soft);color:var(--teal);}
+.status-pill.err{background:var(--stamp-soft);color:var(--stamp);}
+
+.action-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center;}
+.btn{
+  font-family:var(--font-body);font-weight:600;font-size:13.5px;
+  padding:10px 18px;border-radius:var(--radius);border:1px solid var(--ink);
+  background:var(--ink);color:#fff;cursor:pointer;transition:transform .1s ease, opacity .15s;
+}
+.btn:hover{opacity:0.88;}
+.btn:active{transform:translateY(1px);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn.secondary{background:transparent;color:var(--ink);}
+.btn.stamp-cta{background:var(--stamp);border-color:var(--stamp);}
+.btn.teal-cta{background:var(--teal);border-color:var(--teal);}
+
+.progress-wrap{margin-top:14px;display:none;}
+.progress-wrap.show{display:block;}
+.progress-label{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;}
+.progress-bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;}
+.progress-bar > div{height:100%;background:var(--stamp);width:0%;transition:width .2s ease;}
+
+.results{margin-top:18px;}
+.result-row{
+  display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--paper-card);margin-bottom:8px;position:relative;overflow:hidden;
+}
+.result-row .rname{flex:1;font-family:var(--font-mono);font-size:12px;word-break:break-all;}
+.result-badge{
+  font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.5px;color:var(--teal);
+  border:1px solid var(--teal);border-radius:3px;padding:2px 7px;transform:rotate(-4deg);
+  animation:stampin .28s ease-out;
+}
+@media (prefers-reduced-motion: reduce){ .result-badge{animation:none;} }
+@keyframes stampin{from{opacity:0;transform:rotate(-4deg) scale(1.6);}to{opacity:1;transform:rotate(-4deg) scale(1);}}
+.result-row a.dl{font-size:12px;font-weight:600;color:var(--stamp);text-decoration:none;border:1px solid var(--stamp);padding:5px 10px;border-radius:var(--radius);}
+.result-row a.dl:hover{background:var(--stamp-soft);}
+.error-row{border-color:var(--stamp);}
+.error-row .rname{color:var(--stamp);}
+
+.empty-note{font-size:12.5px;color:var(--ink-faint);padding:14px 4px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.footer-note{margin-top:30px;text-align:center;font-size:11.5px;color:var(--ink-faint);font-family:var(--font-mono);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <div class="stamp-badge">PDF<br>STAMP</div>
+      <div>
+        <h1>PDF Stamp Toolkit</h1>
+        <p>Filenames, logos &amp; page numbers — stamped, batched, or merged.</p>
+      </div>
+    </div>
+    <div class="privacy-note">⌁ Runs entirely in your browser — files are never uploaded anywhere</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="single"><span class="num">01</span> Single File</button>
+    <button class="tab-btn" data-tab="batch"><span class="num">02</span> Batch Folder</button>
+    <button class="tab-btn" data-tab="merge"><span class="num">03</span> Merge Folder</button>
+  </nav>
+
+  <main>
+    <!-- ============ SETTINGS PANEL (shared) ============ -->
+    <div>
+      <section class="panel">
+        <h2>Stamp settings</h2>
+
+        <!-- Filename -->
+        <div class="stamp-group" id="group-filename">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="fn-enable" checked><span class="track"></span></span> Filename</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-filename" data-selected="bottom-right">
+                <button type="button" class="pos-btn" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn active" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Font size</label><input type="number" id="fn-size" value="9" min="4" max="48"></div>
+              <div class="field"><label>Font</label>
+                <select id="fn-font">
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="HelveticaBold">Helvetica Bold</option>
+                  <option value="TimesRoman">Times</option>
+                  <option value="Courier">Courier</option>
+                </select>
+              </div>
+            </div>
+            <label class="checkbox-line"><input type="checkbox" id="fn-keep-ext"> Include .pdf extension</label>
+          </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="stamp-group" id="group-logo" data-off="true">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="logo-enable"><span class="track"></span></span> Company logo (PNG)</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field"><label>Logo file</label><input type="file" id="logo-file" accept="image/png"></div>
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-logo" data-selected="top-left">
+                <button type="button" class="pos-btn active" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="field"><label>Width (% of page width): <span id="logo-scale-val">12</span>%</label>
+              <input type="range" id="logo-scale" min="3" max="40" value="12" style="width:100%;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Page number -->
+        <div class="stamp-group" id="group-pagenum">
+          <div class="stamp-group-head">
+            <label class="switch-label"><span class="switch"><input type="checkbox" id="pn-enable" checked><span class="track"></span></span> Page number</label>
+          </div>
+          <div class="stamp-group-body">
+            <div class="field">
+              <label>Text template</label>
+              <input type="text" id="pn-template" value="Page {n} of {total}">
+              <div class="hint">Use <code>{n}</code> for page number and <code>{total}</code> for page count.</div>
+            </div>
+            <div class="field">
+              <label>Position</label>
+              <div class="pos-grid" id="grid-pagenum" data-selected="bottom-center">
+                <button type="button" class="pos-btn" data-pos="top-left">Top L</button>
+                <button type="button" class="pos-btn" data-pos="top-center">Top C</button>
+                <button type="button" class="pos-btn" data-pos="top-right">Top R</button>
+                <button type="button" class="pos-btn" data-pos="bottom-left">Btm L</button>
+                <button type="button" class="pos-btn active" data-pos="bottom-center">Btm C</button>
+                <button type="button" class="pos-btn" data-pos="bottom-right">Btm R</button>
+              </div>
+            </div>
+            <div class="field"><label>Font size</label><input type="number" id="pn-size" value="9" min="4" max="48"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Colors &amp; spacing</h2>
+        <div class="field color-row">
+          <input type="color" id="fg-color" value="#1E2A38">
+          <span class="swatch-label">Foreground (text / logo tint n/a for PNG)</span>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label class="checkbox-line" style="margin-top:0;"><input type="checkbox" id="bg-enable" checked> Background box behind stamps</label>
+        </div>
+        <div class="field color-row">
+          <input type="color" id="bg-color" value="#F2EFE6">
+          <span class="swatch-label">Background box color</span>
+        </div>
+        <div class="field"><label>Background opacity: <span id="bg-opacity-val">85</span>%</label>
+          <input type="range" id="bg-opacity" min="10" max="100" value="85" style="width:100%;">
+        </div>
+        <div class="field"><label>Page margin (pt)</label><input type="number" id="margin" value="24" min="0" max="120"></div>
+      </section>
+    </div>
+
+    <!-- ============ WORKSPACE ============ -->
+    <div>
+      <!-- TAB 1: SINGLE FILE -->
+      <section class="panel tab-panel active" id="tab-single">
+        <h2>Single file</h2>
+        <div class="dropzone" id="dz-single">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12m0-12 4 4m-4-4-4 4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <div class="dz-title">Drop a PDF here or click to browse</div>
+          <div class="dz-sub">One file · stamped with your settings</div>
+          <input type="file" id="single-file" accept="application/pdf">
+        </div>
+        <div class="file-list" id="single-file-list" style="display:none;"></div>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="single-process" disabled>Stamp PDF</button>
+          <button class="btn secondary" id="single-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="single-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="results" id="single-results"></div>
+      </section>
+
+      <!-- TAB 2: BATCH FOLDER -->
+      <section class="panel tab-panel" id="tab-batch">
+        <h2>Batch folder — stamp every PDF separately</h2>
+        <div class="dropzone" id="dz-batch">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+          <div class="dz-title">Click to choose a folder</div>
+          <div class="dz-sub">Every PDF inside will be stamped and kept as a separate file</div>
+          <input type="file" id="batch-files" webkitdirectory multiple>
+        </div>
+        <div class="file-list" id="batch-file-list" style="display:none;"></div>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="batch-process" disabled>Stamp all files</button>
+          <button class="btn secondary" id="batch-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="batch-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="action-row" id="batch-download-row" style="display:none;">
+          <button class="btn teal-cta" id="batch-zip">Download all as ZIP</button>
+          <span class="hint" style="margin:0;">or download files individually below</span>
+        </div>
+        <div class="results" id="batch-results"></div>
+      </section>
+
+      <!-- TAB 3: MERGE FOLDER -->
+      <section class="panel tab-panel" id="tab-merge">
+        <h2>Merge folder — combine into one stamped PDF</h2>
+        <div class="dropzone" id="dz-merge">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3h7l4 4v14H7V3Z"/><path d="M17 3v4h4"/><path d="M9 12h6M9 16h6"/></svg>
+          <div class="dz-title">Click to choose a folder</div>
+          <div class="dz-sub">Files merge in the order shown below — reorder with the arrows</div>
+          <input type="file" id="merge-files" webkitdirectory multiple>
+        </div>
+        <div class="file-list" id="merge-file-list" style="display:none;"></div>
+        <div class="hint" style="margin-top:8px;">Each page keeps a stamp of its own original source filename, plus continuous page numbering across the merged document.</div>
+        <div class="action-row">
+          <button class="btn stamp-cta" id="merge-process" disabled>Merge &amp; stamp</button>
+          <button class="btn secondary" id="merge-reset">Reset</button>
+        </div>
+        <div class="progress-wrap" id="merge-progress"><div class="progress-label">Processing…</div><div class="progress-bar"><div></div></div></div>
+        <div class="results" id="merge-results"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="footer-note">No files or data leave this browser tab — processing happens entirely on your machine.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- tabs ---------------- */
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  /* ---------------- position grids ---------------- */
+  document.querySelectorAll('.pos-grid').forEach(function(grid){
+    grid.addEventListener('click', function(e){
+      var b = e.target.closest('.pos-btn');
+      if(!b) return;
+      grid.querySelectorAll('.pos-btn').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      grid.dataset.selected = b.dataset.pos;
+    });
+  });
+
+  /* ---------------- enable switches toggle group opacity ---------------- */
+  function wireSwitch(checkboxId, groupId){
+    var cb = document.getElementById(checkboxId);
+    var group = document.getElementById(groupId);
+    function sync(){ group.dataset.off = (!cb.checked).toString(); }
+    cb.addEventListener('change', sync);
+    sync();
+  }
+  wireSwitch('fn-enable','group-filename');
+  wireSwitch('logo-enable','group-logo');
+  wireSwitch('pn-enable','group-pagenum');
+
+  document.getElementById('logo-scale').addEventListener('input', function(){
+    document.getElementById('logo-scale-val').textContent = this.value;
+  });
+  document.getElementById('bg-opacity').addEventListener('input', function(){
+    document.getElementById('bg-opacity-val').textContent = this.value;
+  });
+
+  /* ---------------- shared helpers ---------------- */
+  var PDFLibRef = window.PDFLib;
+  var StandardFonts = PDFLibRef.StandardFonts;
+  var rgbFn = PDFLibRef.rgb;
+
+  function hexToRgb01(hex){
+    hex = hex.replace('#','');
+    var r = parseInt(hex.substring(0,2),16)/255;
+    var g = parseInt(hex.substring(2,4),16)/255;
+    var b = parseInt(hex.substring(4,6),16)/255;
+    return rgbFn(r,g,b);
+  }
+
+  function fmtBytes(n){
+    if(n < 1024) return n + ' B';
+    if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/1024/1024).toFixed(2) + ' MB';
+  }
+
+  function readSettings(){
+    return {
+      filename:{
+        enabled: document.getElementById('fn-enable').checked,
+        position: document.getElementById('grid-filename').dataset.selected,
+        size: parseFloat(document.getElementById('fn-size').value) || 9,
+        font: document.getElementById('fn-font').value,
+        keepExt: document.getElementById('fn-keep-ext').checked
+      },
+      logo:{
+        enabled: document.getElementById('logo-enable').checked,
+        position: document.getElementById('grid-logo').dataset.selected,
+        scalePct: parseFloat(document.getElementById('logo-scale').value) || 12,
+        bytes: window.__logoBytes || null
+      },
+      pageNumber:{
+        enabled: document.getElementById('pn-enable').checked,
+        template: document.getElementById('pn-template').value || 'Page {n} of {total}',
+        position: document.getElementById('grid-pagenum').dataset.selected,
+        size: parseFloat(document.getElementById('pn-size').value) || 9
+      },
+      fg: hexToRgb01(document.getElementById('fg-color').value),
+      bgEnabled: document.getElementById('bg-enable').checked,
+      bg: hexToRgb01(document.getElementById('bg-color').value),
+      bgOpacity: (parseFloat(document.getElementById('bg-opacity').value) || 85) / 100,
+      margin: parseFloat(document.getElementById('margin').value) || 24
+    };
+  }
+
+  document.getElementById('logo-file').addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      window.__logoBytes = new Uint8Array(reader.result);
+    };
+    reader.readAsArrayBuffer(f);
+  });
+
+  function getXY(position, pageW, pageH, w, h, margin){
+    var x, y;
+    if(position === 'top-left'){ x = margin; y = pageH - margin - h; }
+    else if(position === 'top-center'){ x = (pageW - w) / 2; y = pageH - margin - h; }
+    else if(position === 'top-right'){ x = pageW - margin - w; y = pageH - margin - h; }
+    else if(position === 'bottom-left'){ x = margin; y = margin; }
+    else if(position === 'bottom-center'){ x = (pageW - w) / 2; y = margin; }
+    else { x = pageW - margin - w; y = margin; } // bottom-right
+    return {x:x, y:y};
+  }
+
+  function drawBgBox(page, x, y, w, h, pad, settings){
+    if(!settings.bgEnabled) return;
+    page.drawRectangle({
+      x: x - pad, y: y - pad,
+      width: w + pad*2, height: h + pad*2,
+      color: settings.bg,
+      opacity: settings.bgOpacity
+    });
+  }
+
+  function drawTextStamp(page, font, text, size, position, margin, settings){
+    if(!text) return;
+    var w = font.widthOfTextAtSize(text, size);
+    var h = font.heightAtSize(size);
+    var pos = getXY(position, page.getWidth(), page.getHeight(), w, h, margin);
+    drawBgBox(page, pos.x, pos.y - (h*0.22), w, h, 4, settings);
+    page.drawText(text, {x: pos.x, y: pos.y, size: size, font: font, color: settings.fg});
+  }
+
+  function drawLogoStamp(page, embeddedImg, position, scalePct, margin, settings){
+    if(!embeddedImg) return;
+    var pageW = page.getWidth();
+    var targetW = pageW * (scalePct/100);
+    var factor = targetW / embeddedImg.width;
+    var dims = embeddedImg.scale(factor);
+    var pos = getXY(position, pageW, page.getHeight(), dims.width, dims.height, margin);
+    drawBgBox(page, pos.x, pos.y, dims.width, dims.height, 5, settings);
+    page.drawImage(embeddedImg, {x: pos.x, y: pos.y, width: dims.width, height: dims.height});
+  }
+
+  function fontConst(key){ return StandardFonts[key] || StandardFonts.Helvetica; }
+
+  /**
+   * Stamp every page of pdfDoc.
+   * filenameFor(pageIndex) -> string used for the filename stamp on that page
+   * totalOverride -> if set, used as {total} in the page-number template instead of this doc's own page count
+   */
+  async function stampDocument(pdfDoc, settings, filenameFor, totalOverride, embeddedLogo){
+    var font = await pdfDoc.embedFont(fontConst(settings.filename.font));
+    var pages = pdfDoc.getPages();
+    var total = totalOverride || pages.length;
+    for(var i=0;i<pages.length;i++){
+      var page = pages[i];
+      if(settings.filename.enabled){
+        var raw = filenameFor(i);
+        var text = settings.filename.keepExt ? raw : raw.replace(/\.pdf$/i,'');
+        drawTextStamp(page, font, text, settings.filename.size, settings.filename.position, settings.margin, settings);
+      }
+      if(settings.logo.enabled && embeddedLogo){
+        drawLogoStamp(page, embeddedLogo, settings.logo.position, settings.logo.scalePct, settings.margin, settings);
+      }
+      if(settings.pageNumber.enabled){
+        var txt = settings.pageNumber.template.replace(/\{n\}/g, String(i+1)).replace(/\{total\}/g, String(total));
+        drawTextStamp(page, font, txt, settings.pageNumber.size, settings.pageNumber.position, settings.margin, settings);
+      }
+    }
+    return pdfDoc;
+  }
+
+  function downloadBlob(bytes, filename){
+    var blob = new Blob([bytes], {type:'application/pdf'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function pdfFilesFromFileList(fileList){
+    return Array.prototype.filter.call(fileList, function(f){
+      return /\.pdf$/i.test(f.name);
+    }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  }
+
+  function readFileAsArrayBuffer(file){
+    return new Promise(function(resolve, reject){
+      var r = new FileReader();
+      r.onload = function(){ resolve(r.result); };
+      r.onerror = reject;
+      r.readAsArrayBuffer(file);
+    });
+  }
+
+  /* ================= TAB 1: SINGLE FILE ================= */
+  (function(){
+    var dz = document.getElementById('dz-single');
+    var input = document.getElementById('single-file');
+    var listEl = document.getElementById('single-file-list');
+    var processBtn = document.getElementById('single-process');
+    var resetBtn = document.getElementById('single-reset');
+    var progressWrap = document.getElementById('single-progress');
+    var resultsEl = document.getElementById('single-results');
+    var currentFile = null;
+
+    dz.addEventListener('click', function(){ input.click(); });
+    dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+    dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+    dz.addEventListener('drop', function(e){
+      e.preventDefault(); dz.classList.remove('drag');
+      if(e.dataTransfer.files && e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', function(){ if(input.files[0]) setFile(input.files[0]); });
+
+    function setFile(f){
+      if(!/\.pdf$/i.test(f.name)){ alert('Please choose a PDF file.'); return; }
+      currentFile = f;
+      listEl.style.display = 'block';
+      listEl.innerHTML = '<div class="file-row"><span class="fname">'+escapeHtml(f.name)+'</span><span class="fsize">'+fmtBytes(f.size)+'</span></div>';
+      processBtn.disabled = false;
+      resultsEl.innerHTML = '';
+    }
+
+    resetBtn.addEventListener('click', function(){
+      currentFile = null; input.value = '';
+      listEl.style.display = 'none'; listEl.innerHTML='';
+      processBtn.disabled = true; resultsEl.innerHTML = '';
+      progressWrap.classList.remove('show');
+    });
+
+    processBtn.addEventListener('click', async function(){
+      if(!currentFile) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      progressWrap.querySelector('div > div').style.width = '30%';
+      resultsEl.innerHTML = '';
+      try{
+        var settings = readSettings();
+        var bytes = await readFileAsArrayBuffer(currentFile);
+        var pdfDoc = await PDFLibRef.PDFDocument.load(bytes);
+        var embeddedLogo = null;
+        if(settings.logo.enabled && settings.logo.bytes){
+          embeddedLogo = await pdfDoc.embedPng(settings.logo.bytes);
+        }
+        var fname = currentFile.name;
+        await stampDocument(pdfDoc, settings, function(){ return fname; }, null, embeddedLogo);
+        progressWrap.querySelector('div > div').style.width = '90%';
+        var outBytes = await pdfDoc.save();
+        progressWrap.querySelector('div > div').style.width = '100%';
+        var outName = 'stamped-' + fname;
+        resultsEl.innerHTML = '';
+        var row = document.createElement('div');
+        row.className = 'result-row';
+        row.innerHTML = '<span class="result-badge">✓ stamped</span><span class="rname">'+escapeHtml(outName)+'</span>';
+        var a = document.createElement('a');
+        a.className = 'dl'; a.textContent = 'Download';
+        a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+        a.download = outName;
+        row.appendChild(a);
+        resultsEl.appendChild(row);
+      }catch(err){
+        console.error(err);
+        resultsEl.innerHTML = '<div class="result-row error-row"><span class="rname">Failed: '+escapeHtml(err.message||String(err))+'</span></div>';
+      }finally{
+        processBtn.disabled = false;
+        setTimeout(function(){ progressWrap.classList.remove('show'); }, 500);
+      }
+    });
+  })();
+
+  /* ================= TAB 2: BATCH FOLDER ================= */
+  (function(){
+    var input = document.getElementById('batch-files');
+    var dz = document.getElementById('dz-batch');
+    var listEl = document.getElementById('batch-file-list');
+    var processBtn = document.getElementById('batch-process');
+    var resetBtn = document.getElementById('batch-reset');
+    var progressWrap = document.getElementById('batch-progress');
+    var resultsEl = document.getElementById('batch-results');
+    var downloadRow = document.getElementById('batch-download-row');
+    var zipBtn = document.getElementById('batch-zip');
+    var files = [];
+    var lastResults = []; // {name, bytes}
+
+    dz.addEventListener('click', function(){ input.click(); });
+    input.addEventListener('change', function(){
+      files = pdfFilesFromFileList(input.files);
+      renderList();
+    });
+
+    function renderList(){
+      if(files.length === 0){ listEl.style.display='none'; processBtn.disabled = true; return; }
+      listEl.style.display = 'block';
+      listEl.innerHTML = files.map(function(f){
+        return '<div class="file-row"><span class="fname">'+escapeHtml(f.name)+'</span><span class="fsize">'+fmtBytes(f.size)+'</span></div>';
+      }).join('');
+      processBtn.disabled = false;
+    }
+
+    resetBtn.addEventListener('click', function(){
+      files = []; input.value=''; lastResults = [];
+      listEl.style.display='none'; listEl.innerHTML='';
+      processBtn.disabled = true; resultsEl.innerHTML='';
+      downloadRow.style.display = 'none';
+      progressWrap.classList.remove('show');
+    });
+
+    processBtn.addEventListener('click', async function(){
+      if(files.length === 0) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      resultsEl.innerHTML = '';
+      downloadRow.style.display = 'none';
+      lastResults = [];
+      var settings = readSettings();
+      var bar = progressWrap.querySelector('div > div');
+      var label = progressWrap.querySelector('.progress-label');
+
+      for(var i=0;i<files.length;i++){
+        var f = files[i];
+        label.textContent = 'Processing ' + (i+1) + ' of ' + files.length + ': ' + f.name;
+        bar.style.width = Math.round(((i)/files.length)*100) + '%';
+        var row = document.createElement('div');
+        row.className = 'result-row';
+        resultsEl.appendChild(row);
+        try{
+          var bytes = await readFileAsArrayBuffer(f);
+          var pdfDoc = await PDFLibRef.PDFDocument.load(bytes);
+          var embeddedLogo = null;
+          if(settings.logo.enabled && settings.logo.bytes){
+            embeddedLogo = await pdfDoc.embedPng(settings.logo.bytes);
+          }
+          await stampDocument(pdfDoc, settings, function(){ return f.name; }, null, embeddedLogo);
+          var outBytes = await pdfDoc.save();
+          var outName = 'stamped-' + f.name;
+          lastResults.push({name: outName, bytes: outBytes});
+          row.innerHTML = '<span class="result-badge">✓ stamped</span><span class="rname">'+escapeHtml(outName)+'</span>';
+          var a = document.createElement('a');
+          a.className='dl'; a.textContent='Download';
+          a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+          a.download = outName;
+          row.appendChild(a);
+        }catch(err){
+          console.error(err);
+          row.classList.add('error-row');
+          row.innerHTML = '<span class="rname">Failed — '+escapeHtml(f.name)+': '+escapeHtml(err.message||String(err))+'</span>';
+        }
+      }
+      bar.style.width = '100%';
+      processBtn.disabled = false;
+      if(lastResults.length){ downloadRow.style.display = 'flex'; }
+      setTimeout(function(){ progressWrap.classList.remove('show'); }, 600);
+    });
+
+    zipBtn.addEventListener('click', async function(){
+      if(!lastResults.length) return;
+      zipBtn.disabled = true;
+      zipBtn.textContent = 'Zipping…';
+      try{
+        var zip = new JSZip();
+        lastResults.forEach(function(r){ zip.file(r.name, r.bytes); });
+        var blob = await zip.generateAsync({type:'blob'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'stamped-pdfs.zip';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      }finally{
+        zipBtn.disabled = false;
+        zipBtn.textContent = 'Download all as ZIP';
+      }
+    });
+  })();
+
+  /* ================= TAB 3: MERGE FOLDER ================= */
+  (function(){
+    var input = document.getElementById('merge-files');
+    var dz = document.getElementById('dz-merge');
+    var listEl = document.getElementById('merge-file-list');
+    var processBtn = document.getElementById('merge-process');
+    var resetBtn = document.getElementById('merge-reset');
+    var progressWrap = document.getElementById('merge-progress');
+    var resultsEl = document.getElementById('merge-results');
+    var files = [];
+
+    dz.addEventListener('click', function(){ input.click(); });
+    input.addEventListener('change', function(){
+      files = pdfFilesFromFileList(input.files);
+      renderList();
+    });
+
+    function renderList(){
+      if(files.length === 0){ listEl.style.display='none'; processBtn.disabled = true; return; }
+      listEl.style.display = 'block';
+      processBtn.disabled = false;
+      draw();
+    }
+
+    function draw(){
+      listEl.innerHTML = files.map(function(f, idx){
+        return '<div class="file-row">'+
+          '<div class="order-btns">'+
+            '<button type="button" data-up="'+idx+'" '+(idx===0?'disabled':'')+'>▲</button>'+
+            '<button type="button" data-down="'+idx+'" '+(idx===files.length-1?'disabled':'')+'>▼</button>'+
+          '</div>'+
+          '<span class="fname">'+escapeHtml(f.name)+'</span>'+
+          '<span class="fsize">'+fmtBytes(f.size)+'</span>'+
+          '<button type="button" class="remove-btn" data-remove="'+idx+'" aria-label="Remove">✕</button>'+
+        '</div>';
+      }).join('');
+    }
+
+    listEl.addEventListener('click', function(e){
+      var up = e.target.getAttribute('data-up');
+      var down = e.target.getAttribute('data-down');
+      var rem = e.target.getAttribute('data-remove');
+      if(up !== null){
+        var i = parseInt(up,10);
+        if(i>0){ var t=files[i-1]; files[i-1]=files[i]; files[i]=t; draw(); }
+      }else if(down !== null){
+        var j = parseInt(down,10);
+        if(j<files.length-1){ var t2=files[j+1]; files[j+1]=files[j]; files[j]=t2; draw(); }
+      }else if(rem !== null){
+        files.splice(parseInt(rem,10),1);
+        if(files.length===0){ listEl.style.display='none'; processBtn.disabled=true; }
+        draw();
+      }
+    });
+
+    resetBtn.addEventListener('click', function(){
+      files = []; input.value='';
+      listEl.style.display='none'; listEl.innerHTML='';
+      processBtn.disabled = true; resultsEl.innerHTML='';
+      progressWrap.classList.remove('show');
+    });
+
+    processBtn.addEventListener('click', async function(){
+      if(files.length === 0) return;
+      processBtn.disabled = true;
+      progressWrap.classList.add('show');
+      resultsEl.innerHTML = '';
+      var bar = progressWrap.querySelector('div > div');
+      var label = progressWrap.querySelector('.progress-label');
+      var settings = readSettings();
+
+      try{
+        var mergedDoc = await PDFLibRef.PDFDocument.create();
+        var pageFilenameMap = [];
+        var failedFiles = [];
+
+        for(var i=0;i<files.length;i++){
+          var f = files[i];
+          label.textContent = 'Copying ' + (i+1) + ' of ' + files.length + ': ' + f.name;
+          bar.style.width = Math.round(((i)/files.length)*70) + '%';
+          try{
+            var bytes = await readFileAsArrayBuffer(f);
+            var srcDoc = await PDFLibRef.PDFDocument.load(bytes);
+            var indices = srcDoc.getPageIndices();
+            var copied = await mergedDoc.copyPages(srcDoc, indices);
+            copied.forEach(function(p){
+              mergedDoc.addPage(p);
+              pageFilenameMap.push(f.name);
+            });
+          }catch(err){
+            console.error(err);
+            failedFiles.push(f.name);
+          }
+        }
+
+        label.textContent = 'Stamping merged document…';
+        bar.style.width = '85%';
+
+        var embeddedLogo = null;
+        if(settings.logo.enabled && settings.logo.bytes){
+          embeddedLogo = await mergedDoc.embedPng(settings.logo.bytes);
+        }
+        var total = mergedDoc.getPageCount();
+        await stampDocument(mergedDoc, settings, function(pageIdx){ return pageFilenameMap[pageIdx]; }, total, embeddedLogo);
+
+        bar.style.width = '96%';
+        var outBytes = await mergedDoc.save();
+        bar.style.width = '100%';
+
+        var outName = 'merged-stamped.pdf';
+        resultsEl.innerHTML = '';
+        var row = document.createElement('div');
+        row.className = 'result-row';
+        row.innerHTML = '<span class="result-badge">✓ merged</span><span class="rname">'+escapeHtml(outName)+' — '+total+' pages</span>';
+        var a = document.createElement('a');
+        a.className='dl'; a.textContent='Download';
+        a.href = URL.createObjectURL(new Blob([outBytes], {type:'application/pdf'}));
+        a.download = outName;
+        row.appendChild(a);
+        resultsEl.appendChild(row);
+
+        if(failedFiles.length){
+          var errRow = document.createElement('div');
+          errRow.className = 'result-row error-row';
+          errRow.innerHTML = '<span class="rname">Skipped (could not read): '+escapeHtml(failedFiles.join(', '))+'</span>';
+          resultsEl.appendChild(errRow);
+        }
+      }catch(err){
+        console.error(err);
+        resultsEl.innerHTML = '<div class="result-row error-row"><span class="rname">Merge failed: '+escapeHtml(err.message||String(err))+'</span></div>';
+      }finally{
+        processBtn.disabled = false;
+        setTimeout(function(){ progressWrap.classList.remove('show'); }, 600);
+      }
+    });
+  })();
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+})();
+</script>
+</body>
+</html>
