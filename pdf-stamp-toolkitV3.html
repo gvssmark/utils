@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Stamp Toolkit V2 - PWA Ready</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#1a73e8">
+<style>
+  *{box-sizing:border-box;font-family:system-ui} body{margin:0;padding:20px;background:#f8f9fa}
+ .card{max-width:700px;margin:0 auto;background:#fff;padding:24px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+ .is-pwa.only-browser{display:none!important}.is-browser.only-pwa{display:none!important}
+  #pwaInstallBtn{display:none;position:fixed;bottom:20px;right:20px;z-index:9999;background:#1a73e8;color:#fff;border:0;padding:12px 20px;border-radius:24px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:pointer}
+  #pwaBadge{display:none;position:fixed;top:12px;right:12px;z-index:9999;background:#2e7d32;color:#fff;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600}
+  button.action{background:#1a73e8;color:#fff;border:0;padding:12px 16px;border-radius:8px;font-weight:600;width:100%;margin-top:12px;cursor:pointer}
+  input{width:100%;padding:10px;border:1px solid #dadce0;border-radius:8px;margin:8px 0}
+</style>
+</head>
+<body>
+
+<div id="pwaBadge">✓ App Mode</div>
+<button id="pwaInstallBtn">📲 Install App</button>
+
+<div class="card">
+  <h2>PDF Stamp Toolkit V2</h2>
+  <p class="only-browser" style="color:#666;font-size:13px">Tip: Install as App for offline use & faster stamping.</p>
+  <p class="only-pwa" style="color:#2e7d32;font-size:13px">✓ Running as installed PWA</p>
+
+  <input type="file" id="pdfFile" accept=".pdf">
+  <input type="text" id="stampText" placeholder="Stamp text = filename (auto)">
+  <button class="action" onclick="processPDF()">Add Filename to Every Page & Download</button>
+  <div id="status" style="margin-top:12px;font-size:13px;color:#555"></div>
+</div>
+
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script>
+// --- PWA DETECTION LOGIC ---
+let deferredPrompt = null;
+function isPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+         window.navigator.standalone === true;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const installBtn = document.getElementById('pwaInstallBtn');
+  const badge = document.getElementById('pwaBadge');
+  if (isPWA()) {
+    badge.style.display = 'block';
+    document.body.classList.add('is-pwa');
+    document.getElementById('status').textContent = 'Opened in PWA mode';
+  } else {
+    document.body.classList.add('is-browser');
+  }
+});
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); deferredPrompt = e;
+  if (!isPWA()) document.getElementById('pwaInstallBtn').style.display = 'block';
+});
+
+document.getElementById('pwaInstallBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) {
+    alert('Press ⋮ Menu > Install App / Save and share > Install');
+    return;
+  }
+  deferredPrompt.prompt();
+  const {outcome} = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('pwaInstallBtn').style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwaInstallBtn').style.display = 'none';
+  document.getElementById('pwaBadge').style.display = 'block';
+});
+
+// --- YOUR EXISTING PDF STAMP LOGIC (Kept) ---
+async function processPDF(){
+  const fileInput = document.getElementById('pdfFile');
+  if(!fileInput.files[0]) return alert('Select PDF');
+  const fileName = fileInput.files[0].name;
+  document.getElementById('stampText').value = fileName;
+  document.getElementById('status').textContent = 'Stamping '+fileName+'... Mode: '+(isPWA()?'PWA':'Browser');
+
+  const arrayBuffer = await fileInput.files[0].arrayBuffer();
+  const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+  const pages = pdfDoc.getPages();
+  const helv = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+
+  pages.forEach(page => {
+    const {width} = page.getSize();
+    page.drawText(fileName, { x: 30, y: 20, size: 9, font: helv, color: PDFLib.rgb(0.4,0.4,0.4) });
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([pdfBytes], {type: 'application/pdf'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'stamped_'+fileName; a.click();
+  document.getElementById('status').textContent = 'Done! Downloaded as stamped_'+fileName+' in '+(isPWA()?'App':'Browser')+' mode';
+}
+</script>
+</body>
+</html>
